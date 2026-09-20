@@ -9,7 +9,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
 <link rel="stylesheet" href="styles/base.css">
 <link rel="stylesheet" href="src/dashboard/dashboard.css">
-<link rel="stylesheet" href="src/editor/editor.css">
+<link rel="stylesheet" href="foto-video-editor/editor.css">
 <link rel="stylesheet" href="src/dashboard/studio.css">
 </head>
 <body>
@@ -30,8 +30,19 @@
   </header>
 
   <div class="studio">
-    <!-- MODUL 1 · Editor (Elias) -->
-    <section class="stage" id="mount-stage"></section>
+    <!-- ================================================================
+         PLATZHALTER FÜR DEN EDITOR — gehört Modul 1 (Elias).
+         Das Dashboard hängt hier nur ein und rendert selbst NICHTS hinein.
+         Wird in src/main.js über editor.aufbauen(el, bedienung) gefüllt.
+         Solange der Editor nicht geladen ist, steht hier der Ersatzkasten.
+         ================================================================ -->
+    <section class="stage" id="editor-slot">
+      <div class="editor-platzhalter">
+        <span class="eyebrow">Editor</span>
+        <p>Hier baut Modul 1 die Vorschau ein.<br>
+        Werkbank: <code>foto-video-editor/foto-video-editor.html</code></p>
+      </div>
+    </section>
     <!-- MODUL 2 · Dashboard: Studio-Spalte, enthält den Einhängepunkt des Editors -->
     <section class="panel" id="mount-post"></section>
   </div>

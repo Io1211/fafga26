@@ -4,7 +4,7 @@ Vier Leute, drei Module, **ein** Produkt.
 
 | Modul | Ordner | Wer |
 |---|---|---|
-| **1 · Foto- und Video-Editor** | `src/editor/` | Elias |
+| **1 · Foto- und Video-Editor** | `foto-video-editor/` | Elias |
 | **2 · Dashboard** — der Weg von vorne bis zum Posten | `src/dashboard/` | zwei Personen |
 | **3 · KI-Assistent** | `src/ai/` | eine Person |
 
@@ -35,7 +35,7 @@ eigene Entwicklungsseite unter `dev/`. Die lädt **nur** dieses Modul, mit erfun
 
 | Seite | Lädt | Für |
 |---|---|---|
-| `dev/editor.html` | nur `src/editor/` | Renderer und Video, mit festem Beispiel-Post |
+| `foto-video-editor/foto-video-editor.html` | nur `foto-video-editor/` | Renderer, Video und Interface, mit einstellbarem Beispiel-Post |
 | `dev/ki.html` | nur `src/ai/` | Anbindung, Prompt, Antwortauswertung |
 
 Das ist die Antwort auf „eigene HTML-Seiten": **ja zum Entwickeln, nein als Produkt.**
@@ -64,7 +64,8 @@ src/core/state.js           DER VERTRAG.                         GEMEINSAM
 src/core/dom.js             Kleine Helfer.                       GEMEINSAM
 src/main.js                 Hängt die Module ein.                GEMEINSAM
 
-src/editor/                 MODUL 1 — Elias
+foto-video-editor/          MODUL 1 — Elias (eigener Ordner, oberste Ebene)
+  foto-video-editor.html    Werkbank: das Interface wird hier ausgearbeitet
   image.js                  Canvas-Renderer, zeichnePost()
   video.js                  Story-Video, baueVideo()
   editor.js                 Bühne, Motivauswahl, Export
@@ -141,8 +142,8 @@ Modul 2 schreibt es, alle lesen:
 
 ```js
 // Modul 2 und 3 dürfen beim Editor (Modul 1):
-import { zeichnePost, alsPng } from "../editor/image.js";
-import { baueVideo }           from "../editor/video.js";
+import { zeichnePost, alsPng } from "../../foto-video-editor/image.js";
+import { baueVideo }           from "../../foto-video-editor/video.js";
 
 // Modul 2 darf beim KI-Assistenten (Modul 3):
 import { frage, FEHLERTEXT }   from "../ai/client.js";
@@ -166,6 +167,19 @@ git push -u origin editor/uebergaenge     # dann Pull Request
 ```
 
 Branch-Namen: `editor/…` · `dashboard/…` · `ki/…`
+
+## Der Platzhalter für den Editor
+
+`index.html` enthält `<section class="stage" id="editor-slot">` mit einem Ersatzkasten.
+Das Dashboard rendert dort **nichts** hinein. `src/main.js` ruft
+`editor.aufbauen(el, bedienungsElement)` auf, und der Editor ersetzt den Inhalt selbst.
+
+So kann Elias das Interface in `foto-video-editor/foto-video-editor.html` fertig ausarbeiten,
+während das Dashboard danebenher gebaut wird. Weil beide Seiten dieselben Moduldateien
+importieren, ist das Zusammenführen am Ende kein Portieren, sondern nur das Einhängen.
+
+Briefing zum Weitergeben an die KI-Assistenten der Dashboard-Leute:
+[BRIEFING-DASHBOARD.md](BRIEFING-DASHBOARD.md)
 
 ## Vor jedem Commit
 

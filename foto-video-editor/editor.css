@@ -26,3 +26,11 @@
 .drop:hover,.drop.over{border-color:var(--loden);background:var(--loden-wash);color:var(--fg)}
 
 @media (max-width:980px){ .stage{position:static} }
+
+/* Ersatzkasten, solange der Editor nicht eingehängt ist.
+   Das Dashboard sieht damit sofort, wo die Vorschau landet. */
+.editor-platzhalter{width:100%;max-width:340px;aspect-ratio:9/16;border:1px dashed var(--line-strong);
+  border-radius:3px;background:var(--surface);display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:8px;text-align:center;padding:20px;color:var(--fg-muted)}
+.editor-platzhalter p{font-size:12.5px;line-height:1.6}
+.editor-platzhalter code{font-family:var(--mono);font-size:11px;color:var(--fg-faint)}

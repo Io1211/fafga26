@@ -39,9 +39,11 @@ src/
   core/dom.js           Kleine Helfer. GEMEINSAM.
   main.js               Hängt die Module ein. GEMEINSAM.
 
-  editor/               MODUL 1 — Foto- und Video-Editor
   dashboard/            MODUL 2 — Der Weg von vorne bis zum Posten
   ai/                   MODUL 3 — KI-Assistent
+
+foto-video-editor/      MODUL 1 — Foto- und Video-Editor (eigener Ordner)
+  foto-video-editor.html  Werkbank zum Ausarbeiten des Interfaces
 ```
 
 **Eine Seite, drei Modulordner.** Jedes Modul baut sein eigenes Markup und bringt seine eigene
@@ -52,7 +54,7 @@ Modul eine Werkbank unter `dev/`, die nur dieses Modul lädt.
 
 | Modul | Ordner | Aufgabe | Strategie |
 |---|---|---|---|
-| **1 · Editor** | `src/editor/` | Canvas-Renderer mit Overlays (`image.js`), Story-Video (`video.js`), Bühne und Export (`editor.js`) | Schritt 1 + 2 |
+| **1 · Editor** | `foto-video-editor/` | Canvas-Renderer mit Overlays (`image.js`), Story-Video (`video.js`), Bühne und Export (`editor.js`) | Schritt 1 + 2 |
 | **2 · Dashboard** | `src/dashboard/` | Einrichtungs-Assistent, Hausgedächtnis, Studio, Prüfliste, Posten | Der Rahmen |
 | **3 · KI-Assistent** | `src/ai/` | `frage({prompt, bild})` → JSON. Mistral per Token, Haus-Muster als Rückfallebene, Captions und Hashtags | Schritt 3 + 4 |
 

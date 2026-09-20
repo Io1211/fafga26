@@ -9,8 +9,8 @@
  * Liest:     state.post (von Modul 4), state.haus (von Modul 1)
  */
 
-import { state, setzeMotiv, motivHinzu, setzeOption, on } from "../core/state.js";
-import { $, $$, toast, slug } from "../core/dom.js";
+import { state, setzeMotiv, motivHinzu, setzeOption, on } from "../src/core/state.js";
+import { $, $$, toast, slug } from "../src/core/dom.js";
 import { zeichnePost, alsPng } from "./image.js";
 import { baueVideo } from "./video.js";
 
@@ -138,6 +138,7 @@ async function videoBauen() {
  * ------------------------------------------------------------------ */
 
 export function aufbauen(buehne, bedienung) {
+  // Ersetzt auch den Platzhalter, den das Dashboard vorhält.
   buehne.innerHTML = markup();
   bedienung.innerHTML = bedienungMarkup();
   stageCanvas = $("#edCanvas");

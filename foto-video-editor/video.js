@@ -14,7 +14,7 @@
  *   · Die Untertitel dürfen nie über das Videoende hinauslaufen.
  */
 
-import { state } from "../core/state.js";
+import { state } from "../src/core/state.js";
 import { zeichnePost, MASSE } from "./image.js";
 
 const FPS = 30;

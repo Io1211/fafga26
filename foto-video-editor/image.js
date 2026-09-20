@@ -18,8 +18,8 @@
  *   · Kontur in ZWEI Durchgängen (siehe textMitKontur).
  */
 
-import { state } from "../core/state.js";
-import { bildHolen } from "../core/dom.js";
+import { state } from "../src/core/state.js";
+import { bildHolen } from "../src/core/dom.js";
 
 export const MASSE = {
   story: { w: 1080, h: 1920 },

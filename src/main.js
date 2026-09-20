@@ -8,9 +8,9 @@
 import { state, laden, on, setzeAnsicht, setzeHaus } from "./core/state.js";
 import { $, esc, toast } from "./core/dom.js";
 import * as einrichten from "./dashboard/einrichten.js";
-import * as editor from "./editor/editor.js";
+import * as editor from "../foto-video-editor/editor.js";
 import * as post from "./dashboard/studio.js";
-import { zeichnePost } from "./editor/image.js";
+import { zeichnePost } from "../foto-video-editor/image.js";
 import { pruefen as kiPruefen, keyLesen, keySetzen } from "./ai/client.js";
 
 laden();
@@ -26,7 +26,7 @@ einrichten.aufbauen($("#mount-einrichten"), () => {
 const editorSlot = post.aufbauen($("#mount-post"));
 
 /* ---------------- MODUL 1 · Editor (Elias) ---------------- */
-editor.aufbauen($("#mount-stage"), editorSlot);
+editor.aufbauen($("#editor-slot"), editorSlot);
 
 /* ---------------- MODUL 3 · KI-Assistent — Statusanzeige ---------------- */
 function kiAnzeige() {

@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Foto- und Video-Editor · Werkbank</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="../styles/base.css">
+<link rel="stylesheet" href="editor.css">
+<style>
+  /* Nur für diese Werkbank-Seite. Im Produkt liefert das Dashboard den Rahmen. */
+  .wb-kopf{max-width:1140px;margin:0 auto;padding:22px 20px 0}
+  .wb-kopf h1{font-family:var(--display);font-size:24px;font-weight:800;letter-spacing:-.02em}
+  .wb-notiz{background:#fdf8ef;border:1px solid #e8d9b8;border-radius:var(--r);
+    padding:12px 14px;font-size:12.5px;line-height:1.6;margin-top:10px}
+  .wb-raum{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:28px;
+    max-width:1140px;margin:0 auto;padding:22px 20px 48px;align-items:start}
+  @media(max-width:980px){.wb-raum{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="wb-kopf">
+  <h1>Foto- und Video-Editor</h1>
+  <p class="wb-notiz"><b>Werkbank — nicht das Produkt.</b> Diese Seite lädt nur den Editor und
+  füttert ihn mit einem Beispiel-Post. So lässt sich am Interface arbeiten, ohne dass Dashboard
+  oder KI fertig sein müssen. Das Produkt ist <a href="../index.html">../index.html</a>;
+  dort liefert das Dashboard den Post und der Editor wird in <code>#editor-slot</code> eingehängt.</p>
+</div>
+
+<div class="wb-raum">
+  <!-- Die Bühne — im Produkt genau dieses Element -->
+  <section class="stage" id="mount-stage"></section>
+
+  <section class="panel">
+    <!-- Format und Motive baut der Editor selbst hier hinein -->
+    <div id="mount-bedienung"></div>
+
+    <!-- Nur Werkbank: den Post von Hand setzen, damit man alles durchspielen kann.
+         Im Produkt kommt das aus dem Dashboard bzw. vom KI-Assistenten. -->
+    <div class="block">
+      <h3>Beispiel-Post <span class="eyebrow" style="font-weight:400">· nur Werkbank</span></h3>
+      <label class="f"><span>Kicker</span><input type="text" id="wbKicker" value="Navis · Berggasthof"></label>
+      <label class="f"><span>Overlay-Zeilen · eine je Zeile, höchstens 15 Zeichen</span>
+        <textarea id="wbHead" rows="5">SEIT 1934
+AM SELBEN
+FLECK.</textarea></label>
+      <label class="f"><span>Farbige Zeile</span><input type="text" id="wbKey" value="SEIT 1934"></label>
+      <label class="f"><span>Aufforderung</span><input type="text" id="wbCta" value="Tisch reservieren: 05278 / 2043"></label>
+      <div class="row">
+        <label class="f grow"><span>Hausfarbe</span>
+          <input type="color" id="wbFarbe" value="#d72229" style="width:100%;height:38px;padding:0;border:1px solid var(--line-strong);border-radius:var(--r);background:none;cursor:pointer"></label>
+        <label class="f grow"><span>Betrieb</span><input type="text" id="wbHaus" value="Berggasthof Wildeben"></label>
+      </div>
+    </div>
+
+    <div class="block">
+      <h3>Untertitel-Karten</h3>
+      <div class="cards" id="wbCards"></div>
+      <p class="hint">Aus den Overlay-Zeilen erzeugt. Klick setzt die farbige Karte.
+      Eine Wortgruppe, 0,8–1,2 s, höchstens 15 Zeichen.</p>
+    </div>
+  </section>
+</div>
+
+<script type="module">
+/* Werkbank-Verkabelung. Gehört NICHT ins Produkt — dort liefert das
+   Dashboard den Post über setzePost() aus src/core/state.js. */
+
+import { state, setzePost, setzeHaus } from "../src/core/state.js";
+import { $, clamp } from "../src/core/dom.js";
+import * as editor from "./editor.js";
+
+// Pfade der Demo-Motive auf diese Seite umbiegen
+state.motive = [
+  { src: "../assets/motiv-haus.jpg",   label: "Das Haus von außen" },
+  { src: "../assets/motiv-arbeit.jpg", label: "Bei der Arbeit" }
+];
+
+function kartenAus(zeilen, key) {
+  const teile = String(key || "").split(/\s+/).filter(Boolean);
+  return zeilen.map(z => ({
+    text: z,
+    dur: clamp(0.55 + z.length * 0.045, 0.8, 1.25),
+    key: teile.length > 0 && teile.some(k => z.includes(k))
+  }));
+}
+
+function ausFormular() {
+  const head = $("#wbHead").value.split("\n").map(z => z.trim().toUpperCase()).filter(Boolean);
+  const key = $("#wbKey").value.trim().toUpperCase();
+  setzeHaus({ name: $("#wbHaus").value, farbe: $("#wbFarbe").value });
+  document.documentElement.style.setProperty("--hausfarbe", $("#wbFarbe").value);
+  setzePost({
+    kicker: $("#wbKicker").value,
+    head: head.length ? head : ["OHNE TEXT"],
+    key,
+    caption: "", tags: "", quellen: [],
+    cards: kartenAus(head, key),
+    motor: "werkbank"
+  });
+  kartenZeigen();
+}
+
+function kartenZeigen() {
+  const wrap = $("#wbCards");
+  wrap.innerHTML = "";
+  (state.post?.cards || []).forEach(k => {
+    const d = document.createElement("div");
+    d.className = "kcard" + (k.text.length > 15 ? " lang" : "");
+    const t = document.createElement("div");
+    t.className = "t";
+    if (k.key) { const em = document.createElement("em"); em.textContent = k.text; t.append(em); }
+    else t.textContent = k.text;
+    const m = document.createElement("div");
+    m.className = "m";
+    m.textContent = `${k.dur.toFixed(2)} s · ${k.text.length} Z.`;
+    d.append(t, m);
+    d.onclick = () => { k.key = !k.key; setzePost(state.post); kartenZeigen(); };
+    wrap.append(d);
+  });
+}
+
+["#wbKicker", "#wbHead", "#wbKey", "#wbCta", "#wbHaus", "#wbFarbe"]
+  .forEach(s => $(s).oninput = ausFormular);
+$("#wbCta").oninput = () => {
+  setzeHaus({ ctaGast: $("#wbCta").value, ctaTeam: $("#wbCta").value });
+  ausFormular();
+};
+
+editor.aufbauen($("#mount-stage"), $("#mount-bedienung"));
+ausFormular();
+document.fonts?.ready?.then(() => editor.neuZeichnen());
+</script>
+
+<!-- Die Karten-Stile liegen im Dashboard; hier reicht das Nötigste. -->
+<style>
+  .cards{display:flex;flex-wrap:wrap;gap:6px}
+  .kcard{display:flex;flex-direction:column;gap:2px;padding:6px 9px;border:1px solid var(--line-strong);
+    border-radius:3px;background:var(--surface);cursor:pointer}
+  .kcard:hover{border-color:var(--loden)}
+  .kcard .t{font-weight:700;font-size:11.5px;text-transform:uppercase}
+  .kcard .t em{font-style:normal;color:var(--hausfarbe)}
+  .kcard .m{font-family:var(--mono);font-size:9px;color:var(--fg-faint);font-variant-numeric:tabular-nums}
+  .kcard.lang{border-color:var(--warn);background:#fdf8ef}
+</style>
+</body>
+</html>
