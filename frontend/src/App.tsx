@@ -12,6 +12,8 @@ import Inbox from "./Inbox";
 
 type View = "uebersicht" | "studio" | "ideen" | "jahreskalender" | "assistent" | "kanaele" | "kennzahlen" | "inbox";
 
+const SIMULIERT: View[] = ["jahreskalender", "kanaele", "kennzahlen", "inbox"];
+
 const NAV: { id: View; label: string; icon: JSX.Element; badge?: string }[] = [
   { id: "uebersicht", label: "Übersicht", icon: <Grid /> },
   // Ausgeblendet: der Ideen-Assistent ist ins Studio gewandert. Dort füllt
@@ -19,10 +21,10 @@ const NAV: { id: View; label: string; icon: JSX.Element; badge?: string }[] = [
   // Ansicht und Komponente bleiben bestehen, nur der Eintrag fehlt.
   { id: "studio", label: "Studio", icon: <Doc /> },
   { id: "ideen", label: "Caption-Ideen", icon: <Spark /> },
-  { id: "jahreskalender", label: "Jahreskalender", icon: <Cal /> },
-  { id: "kanaele", label: "Kanäle", icon: <Send /> },
-  { id: "kennzahlen", label: "Kennzahlen", icon: <Chart /> },
-  { id: "inbox", label: "Inbox", icon: <Mail /> },
+  { id: "jahreskalender", label: "Jahreskalender", badge: "simuliert", icon: <Cal /> },
+  { id: "kanaele", label: "Kanäle", badge: "simuliert", icon: <Send /> },
+  { id: "kennzahlen", label: "Kennzahlen", badge: "simuliert", icon: <Chart /> },
+  { id: "inbox", label: "Inbox", badge: "simuliert", icon: <Mail /> },
 ];
 
 export default function App() {
@@ -88,7 +90,9 @@ export default function App() {
               : view === "kanaele" ? "Kanäle"
               : view === "kennzahlen" ? "Kennzahlen"
               : view === "inbox" ? "Inbox" : "Operations-Cockpit"}</h1>
-            <div className="sub">{heute} · {house?.name ?? ""}</div>
+            <div className="sub">{heute} · {house?.name ?? ""}
+              {SIMULIERT.includes(view) && <> · <span className="tag grau">simuliert</span></>}
+            </div>
           </div>
           <div className="spacer" />
           <div className="search"><Search />Suchen</div>
