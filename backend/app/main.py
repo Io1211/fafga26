@@ -6,8 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from . import house as house_store
-from . import llm, render
-from .config import DATA, STATIC, UPLOADS, HAS_KEY, MODEL_TEXT, MODEL_VISION
+from . import llm, render, signale
+from .config import DATA, STATIC, UPLOADS, HAS_KEY, LAND, MODEL_TEXT, MODEL_VISION
 from .schemas import House, IdeaRequest, PostOut
 
 app = FastAPI(title="Hauspost API", version="0.1.0")
@@ -98,6 +98,13 @@ def ideen(req: IdeaRequest):
     h = house_store.load()
     items, engine = llm.ideen(h, req.anzahl, req.ziel)
     return {"engine": engine, "ideen": [i.model_dump() for i in items]}
+
+
+@app.get("/api/signale")
+def signale_get():
+    """Wetter, Feiertage, Events in der Naehe - Kontext fuer die Ideen."""
+    h = house_store.load()
+    return signale.alle(h.ort, LAND)
 
 
 @app.get("/api/kennzahlen")

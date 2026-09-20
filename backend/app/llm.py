@@ -13,7 +13,8 @@ from pathlib import Path
 import httpx
 from PIL import Image
 
-from .config import API_URL, DATA, HAS_KEY, MISTRAL_KEY, MODEL_TEXT, MODEL_VISION
+from . import signale
+from .config import API_URL, DATA, HAS_KEY, LAND, MISTRAL_KEY, MODEL_TEXT, MODEL_VISION
 from .schemas import Copy, House, Idea
 
 CACHE = DATA / "cache"
@@ -182,17 +183,74 @@ _ANLAESSE = [
 ]
 
 
+def _signal_ideen(sig: dict, ziel: str | None) -> list[Idea]:
+    """Ideen direkt aus Wetter, Feiertag, Event - fuer den Haus-Muster-Fallback."""
+    if ziel and ziel != "gast":
+        return []
+    out: list[Idea] = []
+
+    w = sig["wetter"]
+    if w["kurz"] and w["tage"]:
+        sonnig = w["tage"][0]["beschreibung"] in ("klarer Himmel", "ueberwiegend klar", "teils bewoelkt")
+        out.append(Idea(
+            titel="Terrasse & Wetter" if sonnig else "Gemuetlich drinnen", ziel="gast", anlass="Wetter",
+            quelle=w["kurz"],
+            hook=("Nutzt das Wetter, zeigt die Terrasse." if sonnig
+                  else "Zeigt, wie gemuetlich es drinnen bei diesem Wetter ist."),
+            szenen=["Aussenaufnahme mit aktuellem Wetter, 3 Sek", "Detail vom Angebot, 3 Sek",
+                    "Gaeste im Moment, 2 Sek", "Schlussbild mit Schriftzug, 2 Sek"],
+            warum="Baut auf der aktuellen Wetterlage auf, nichts dazuerfunden.",
+        ))
+
+    f = sig["feiertage"]
+    if f["kurz"]:
+        name = f["liste"][0]["name"]
+        out.append(Idea(
+            titel=name, ziel="gast", anlass="Feiertag", quelle=f["kurz"],
+            hook=f"Passend zu {name} zeigen, was es bei euch dazu gibt.",
+            szenen=["Totale vom festlich vorbereiteten Haus, 3 Sek", "Detail vom passenden Angebot, 3 Sek",
+                    "Person erzaehlt kurz, 2 Sek", "Schlussbild mit Schriftzug, 2 Sek"],
+            warum="Baut auf dem anstehenden Feiertag auf, nichts dazuerfunden.",
+        ))
+
+    e = sig["events"]
+    if e["kurz"]:
+        name = e["liste"][0]["name"]
+        out.append(Idea(
+            titel=name, ziel="gast", anlass="Event in der Naehe", quelle=e["kurz"],
+            hook=f"Gaeste, die zu {name} kommen, auf euch aufmerksam machen.",
+            szenen=["Aussenaufnahme mit Naehe zum Event, 3 Sek", "Detail vom Angebot, 3 Sek",
+                    "Person laedt ein, 2 Sek", "Schlussbild mit Schriftzug, 2 Sek"],
+            warum="Baut auf einem realen Event in der Naehe auf, nichts dazuerfunden.",
+        ))
+    return out
+
+
+def _anlaesse_block(sig: dict) -> str:
+    zeilen = [
+        "Wetter: " + (sig["wetter"]["kurz"] or "unbekannt"),
+        "Naechster Feiertag: " + (sig["feiertage"]["kurz"] or "keiner in Sicht"),
+        "Event in der Naehe: " + (sig["events"]["kurz"] or "keins gefunden"),
+    ]
+    return "\n".join("- " + z for z in zeilen)
+
+
 def ideen(house: House, anzahl: int = 6, ziel: str | None = None) -> tuple[list[Idea], str]:
+    sig = signale.alle(house.ort, LAND)
+
     if HAS_KEY:
         try:
             belege = "\n".join("- " + b for b in house.belege if b.strip())
             p = (f"Betrieb: {house.name}, {house.ort} ({house.art}).\n"
                  f"Belege:\n{belege}\nNie behaupten: {', '.join(house.sperrliste)}\n\n"
+                 f"AKTUELLE ANLAESSE (nutze sie nur, wenn sie zum Betrieb passen, erfinde nichts dazu):\n"
+                 f"{_anlaesse_block(sig)}\n\n"
                  f"Schlage {anzahl} konkrete Post-Ideen vor. "
                  f"{'Nur fuer ' + ('Gaeste' if ziel=='gast' else 'Mitarbeitende') + '.' if ziel else 'Gemischt fuer Gaeste und Mitarbeitende.'}\n"
                  "Jede Idee: titel, ziel (gast oder team), anlass, quelle (welcher Beleg oder "
-                 "welcher Anlass), hook (ein Satz), szenen (3 bis 4 Kameraeinstellungen fuer ein "
-                 "kurzes Video, je eine kurze Anweisung), warum (ein Satz).\n"
+                 "welcher Anlass - auch ein Anlass von oben zaehlt als Quelle), hook (ein Satz), "
+                 "szenen (3 bis 4 Kameraeinstellungen fuer ein kurzes Video, je eine kurze "
+                 "Anweisung), warum (ein Satz).\n"
                  'Antworte als JSON: {"ideen": [...]}')
             data = _call(MODEL_TEXT, [{"role": "user", "content": p}])
             roh = data.get("ideen", data if isinstance(data, list) else [])
@@ -208,8 +266,8 @@ def ideen(house: House, anzahl: int = 6, ziel: str | None = None) -> tuple[list[
             pass
 
     belege = [b for b in house.belege if b.strip()] or ["Wir sind da."]
-    out = []
-    for i in range(anzahl):
+    out = _signal_ideen(sig, ziel)[:anzahl]
+    for i in range(anzahl - len(out)):
         titel, anlass = _ANLAESSE[i % len(_ANLAESSE)]
         z = ziel or ("team" if i % 3 == 2 else "gast")
         b = belege[i % len(belege)]
