@@ -34,3 +34,17 @@
   justify-content:center;gap:8px;text-align:center;padding:20px;color:var(--fg-muted)}
 .editor-platzhalter p{font-size:12.5px;line-height:1.6}
 .editor-platzhalter code{font-family:var(--mono);font-size:11px;color:var(--fg-faint)}
+
+/* Farbpalette aus dem Logo */
+.palette{display:flex;flex-wrap:wrap;gap:6px}
+.farbtupfer{width:34px;height:34px;border-radius:50%;border:2px solid var(--line-strong);
+  cursor:pointer;padding:0;transition:transform .12s,border-color .12s}
+.farbtupfer:hover{transform:scale(1.08)}
+.farbtupfer[aria-pressed="true"]{border-color:var(--fg);box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--fg)}
+.swatchbtn{position:relative;padding-left:28px}
+.swatchbtn::before{content:"";position:absolute;left:9px;top:50%;transform:translateY(-50%);
+  width:13px;height:13px;border-radius:3px;background:var(--s);border:1px solid var(--line-strong)}
+#edRandPicker{width:42px;height:36px;padding:0;border:1px solid var(--line-strong);
+  border-radius:var(--r);background:none;cursor:pointer}
+#edFarbe{width:42px;height:36px;padding:0;border:1px solid var(--line-strong);
+  border-radius:var(--r);background:none;cursor:pointer}

@@ -34,6 +34,14 @@ export const MASSE = {
  * weil darunter noch die Aufforderung Platz braucht und Instagram in der
  * Story unten eigene Bedienelemente einblendet.
  */
+/**
+ * Wie das Foto ins Format kommt.
+ *   "unschaerfe" — Foto vollständig sichtbar, Rand = eigenes Bild, unscharf
+ *   "fuellend"   — formatfüllend, wird beschnitten
+ *   "rand"       — Foto vollständig sichtbar, Rand in einer festen Farbe
+ */
+export const PASSUNGEN = ["unschaerfe", "fuellend", "rand"];
+
 export const LAYOUTS = {
   unten: { grund: 0.72, ausricht: "left"   },
   mitte: { grund: 0.56, ausricht: "left"   },
@@ -82,9 +90,19 @@ function passendeGroesse(c, zeilen, maxBreite, start) {
  *   opts.pop       Zahl Skalierung der Zeile beim Einblenden (Video)
  *   opts.raster    bool Hilfslinien einzeichnen
  */
+/* Zwei Zeichenvorgänge auf demselben Canvas können sich überlagern: beide
+   löschen, beide warten auf das Bild, beide malen — das Ergebnis ist ein
+   Übereinander aus altem und neuem Stand. Jeder Aufruf zieht deshalb eine
+   Nummer; wer beim Malen nicht mehr der Neueste ist, bricht ab. */
+const laufend = new WeakMap();
+
 export async function zeichnePost(canvas, opts = {}) {
   const post = state.post;
   if (!canvas || !post) return;
+
+  const nummer = (laufend.get(canvas) || 0) + 1;
+  laufend.set(canvas, nummer);
+  const veraltet = () => laufend.get(canvas) !== nummer;
 
   const mass = MASSE[state.format] || MASSE.story;
   if (canvas.width !== mass.w || canvas.height !== mass.h) {
@@ -100,59 +118,93 @@ export async function zeichnePost(canvas, opts = {}) {
 
   const motiv = state.motive[state.motiv] || state.motive[0];
   const im = motiv ? await bildHolen(motiv.datei || motiv.src) : null;
+  if (veraltet()) return;
+
+  /* Bei farbigem Rand darf der Verlauf das Foto nicht verlassen — sonst
+     ist der Rand nicht die gewählte Farbe, sondern eine abgedunkelte. */
+  let fotoRect = null;
 
   c.save();
   c.fillStyle = "#0d0e12";
   c.fillRect(0, 0, W, H);
 
   if (im) {
-    // Hintergrund: dasselbe Bild, formatfüllend, unscharf, abgedunkelt.
-    // Klein rechnen und hochskalieren — Blur auf dem großen Canvas ist zäh.
-    const kl = document.createElement("canvas");
-    kl.width = 90;
-    kl.height = Math.max(1, Math.round(90 * H / W));
-    const kc = kl.getContext("2d");
-    const cov = Math.max(kl.width / im.width, kl.height / im.height);
-    kc.drawImage(im,
-      (kl.width  - im.width  * cov) / 2,
-      (kl.height - im.height * cov) / 2,
-      im.width * cov, im.height * cov);
-    c.filter = "blur(26px) brightness(.5) saturate(.8)";
-    c.drawImage(kl, -W * 0.06, -H * 0.06, W * 1.12, H * 1.12);
-    c.filter = "none";
-
-    // Vordergrund: Foto vollständig sichtbar, nie beschnitten.
+    const passung = state.passung || "unschaerfe";
     const z = 1 + push * 0.09;
-    const fit = Math.min(W / im.width, H / im.height) * z;
-    const w = im.width * fit, h = im.height * fit;
-    c.drawImage(im, (W - w) / 2, (H - h) / 2 - H * 0.02 * push, w, h);
+
+    if (passung === "fuellend") {
+      // Formatfüllend: das Bild deckt alles ab und wird dafür beschnitten.
+      const cov = Math.max(W / im.width, H / im.height) * z;
+      const w = im.width * cov, h = im.height * cov;
+      c.drawImage(im, (W - w) / 2, (H - h) / 2 - H * 0.02 * push, w, h);
+
+    } else {
+      // Beide anderen Arten zeigen das Foto VOLLSTÄNDIG. Unterschied ist nur,
+      // was im Rand steht: das eigene Bild unscharf, oder eine feste Farbe.
+      if (passung === "rand") {
+        c.fillStyle = state.randfarbe || "#ffffff";
+        c.fillRect(0, 0, W, H);
+      } else {
+        // Klein rechnen und hochskalieren — Blur auf dem großen Canvas ist zäh.
+        const kl = document.createElement("canvas");
+        kl.width = 90;
+        kl.height = Math.max(1, Math.round(90 * H / W));
+        const kc = kl.getContext("2d");
+        const cov = Math.max(kl.width / im.width, kl.height / im.height);
+        kc.drawImage(im,
+          (kl.width  - im.width  * cov) / 2,
+          (kl.height - im.height * cov) / 2,
+          im.width * cov, im.height * cov);
+        c.filter = "blur(26px) brightness(.5) saturate(.8)";
+        c.drawImage(kl, -W * 0.06, -H * 0.06, W * 1.12, H * 1.12);
+        c.filter = "none";
+      }
+      const fit = Math.min(W / im.width, H / im.height) * z;
+      const w = im.width * fit, h = im.height * fit;
+      const fx = (W - w) / 2, fy = (H - h) / 2 - H * 0.02 * push;
+      c.drawImage(im, fx, fy, w, h);
+      if (passung === "rand") fotoRect = { x: fx, y: fy, w, h };
+    }
   }
 
-  // Verläufe am mittleren 4:5-Feld verankert
+  // Verläufe am mittleren 4:5-Feld verankert.
+  // Bei farbigem Rand fallen sie schwächer aus, sonst wirkt der Rand schmutzig.
+  const randModus = state.passung === "rand";
+  const dunkel = randModus ? 0.34 : 1;
   const feldH = W * 1.25, feldY = (H - feldH) / 2;
   const gTop = c.createLinearGradient(0, feldY, 0, feldY + feldH * 0.34);
-  gTop.addColorStop(0, "rgba(8,9,11,.66)");
+  gTop.addColorStop(0, `rgba(8,9,11,${0.66 * dunkel})`);
   gTop.addColorStop(1, "rgba(8,9,11,0)");
+  c.save();
+  if (fotoRect) { c.beginPath(); c.rect(fotoRect.x, fotoRect.y, fotoRect.w, fotoRect.h); c.clip(); }
   c.fillStyle = gTop;
   c.fillRect(0, 0, W, feldY + feldH * 0.34);
 
   const gBot = c.createLinearGradient(0, feldY + feldH * 0.42, 0, H);
   gBot.addColorStop(0, "rgba(8,9,11,0)");
-  gBot.addColorStop(0.72, "rgba(8,9,11,.80)");
-  gBot.addColorStop(1, "rgba(8,9,11,.92)");
+  gBot.addColorStop(0.72, `rgba(8,9,11,${0.80 * dunkel})`);
+  gBot.addColorStop(1, `rgba(8,9,11,${0.92 * dunkel})`);
   c.fillStyle = gBot;
   c.fillRect(0, feldY + feldH * 0.42, W, H - (feldY + feldH * 0.42));
+  c.restore();
 
   const pad = Math.round(W * 0.072);
 
   // Logo bzw. Wortmarke, ebenfalls im 4:5-Feld verankert
   const logoY = feldY + pad;
   let logoGesetzt = false;
+  let logoHoehe = W * 0.048;   // Höhe der Wortmarke, falls kein Logo da ist
   if (haus.logo) {
     const lg = await bildHolen(haus.logo);
+    if (veraltet()) { c.restore(); return; }
     if (lg) {
-      const lw = Math.min(W * 0.34, lg.width);
-      c.drawImage(lg, pad, logoY, lw, lw * lg.height / lg.width);
+      // In eine Box einpassen. Nur die Breite zu begrenzen geht schief,
+      // sobald das Logo quadratisch ist — dann wird es turmhoch.
+      const maxB = W * 0.26, maxH = W * 0.105;
+      const f = Math.min(maxB / lg.width, maxH / lg.height);
+      const lw = lg.width * f, lh = lg.height * f;
+      c.drawImage(lg, pad, logoY, lw, lh);
+      logoHoehe = lh;
       logoGesetzt = true;
     }
   }
@@ -166,24 +218,6 @@ export async function zeichnePost(canvas, opts = {}) {
     c.fillRect(pad, logoY + W * 0.048, W * 0.055, W * 0.007);
   }
 
-  // Event-Badge: Datum und Ort, wenn es kein Betrieb, sondern ein Event ist.
-  // Sitzt direkt unter dem Logo, damit beides als Kopf zusammenwirkt.
-  if (haus.modus === "event" && (haus.datum || haus.ortDetail)) {
-    const txt = [haus.datum, haus.ortDetail].filter(Boolean).join("  ·  ").toUpperCase();
-    const bs = Math.round(W * 0.024);
-    c.font = `700 ${bs}px Inter, sans-serif`;
-    c.textAlign = "left";
-    c.textBaseline = "top";
-    const bx = pad, by = logoY + W * 0.082;
-    const bw = c.measureText(txt).width + bs * 1.5;
-    const bh = bs * 2.1;
-    c.fillStyle = haus.farbe;
-    if (c.roundRect) { c.beginPath(); c.roundRect(bx, by, bw, bh, bh / 2); c.fill(); }
-    else c.fillRect(bx, by, bw, bh);
-    c.fillStyle = "#ffffff";
-    c.fillText(txt, bx + bs * 0.75, by + bh / 2 - bs * 0.6);
-  }
-
   const lay = LAYOUTS[state.layout] || LAYOUTS.unten;
   const grundY = H * lay.grund;
 
@@ -194,6 +228,24 @@ export async function zeichnePost(canvas, opts = {}) {
   const zh = gross * 1.14;
   const start = grundY - (zeilen.length - 1) * zh;
   const keyTeile = String(post.key || "").split(/\s+/).filter(Boolean);
+
+  // Event-Badge: Datum und Ort, wenn es kein Betrieb, sondern ein Event ist.
+  // Sitzt direkt unter dem Logo, damit beides als Kopf zusammenwirkt.
+  if (haus.modus === "event" && (haus.datum || haus.ortDetail)) {
+    const txt = [haus.datum, haus.ortDetail].filter(Boolean).join("  ·  ").toUpperCase();
+    const bs = Math.round(W * 0.024);
+    c.font = `700 ${bs}px Inter, sans-serif`;
+    c.textAlign = "left";
+    c.textBaseline = "top";
+    const bx = pad, by = logoY + logoHoehe + W * 0.030;
+    const bw = c.measureText(txt).width + bs * 1.5;
+    const bh = bs * 2.1;
+    c.fillStyle = haus.farbe;
+    if (c.roundRect) { c.beginPath(); c.roundRect(bx, by, bw, bh, bh / 2); c.fill(); }
+    else c.fillRect(bx, by, bw, bh);
+    c.fillStyle = "#ffffff";
+    c.fillText(txt, bx + bs * 0.75, by + bh / 2 - bs * 0.6);
+  }
 
   // Kicker — sitzt über der obersten Zeile
   c.textAlign = "left";

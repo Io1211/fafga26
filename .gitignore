@@ -4,3 +4,7 @@ __pycache__/
 .env
 node_modules/
 .cache/
+
+# Große Originale bleiben lokal, in assets/ liegen die verkleinerten Fassungen
+foto-video-editor/Beispielbilder/*.JPG
+foto-video-editor/Beispielbilder/*.jpg

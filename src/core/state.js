@@ -71,8 +71,8 @@ export const VORGABE_EVENT = {
   name: "KI-Buildathon",
   ort: "Innsbruck",
   art: "Event",
-  farbe: "#d7263d",
-  logo: null,
+  farbe: "#cdf03a",          // KIDU-Markenfarbe, aus dem Logo der Website
+  logo: "assets/kidu-logo.png",
   belege: [
     "Ein Tag, gemischte Teams, echte KI-Prototypen für Tirols Hotellerie und Gastronomie.",
     "Sechs Fälle aus echten Betrieben sind der Ausgangspunkt, kein Korsett.",
@@ -109,7 +109,9 @@ export const state = {
   motive: [
     { src: "assets/motiv-haus.jpg", label: "Das Haus von außen" },
     { src: "assets/motiv-arbeit.jpg", label: "Bei der Arbeit" },
-    { src: "assets/motiv-event.jpg", label: "Vom Event" }
+    { src: "assets/kidu-halle.jpg",  label: "KIDU · Halle mit Bühne" },
+    { src: "assets/kidu-teams.jpg",  label: "KIDU · Teams bei der Arbeit" },
+    { src: "assets/motiv-event.jpg", label: "KIDU · Handout" }
   ],
   motiv: 0,
 
@@ -120,6 +122,8 @@ export const state = {
   ziel: "gast",       // "gast" | "team"
   format: "story",    // "story" (1080×1920) | "post" (1080×1350)
   layout: "unten",    // "unten" | "mitte" | "oben" — wo der Textblock sitzt
+  passung: "unschaerfe", // "unschaerfe" | "fuellend" | "rand"
+  randfarbe: "#ffffff",  // nur bei passung === "rand"
   raster: false,      // Hilfslinien im Editor
   ansicht: "onboarding", // "onboarding" | "studio"
   eingerichtet: false
@@ -190,6 +194,8 @@ export function sichern() {
       ziel: state.ziel,
       format: state.format,
       layout: state.layout,
+      passung: state.passung,
+      randfarbe: state.randfarbe,
       eingerichtet: state.eingerichtet
     }));
   } catch (e) { /* privates Fenster, gesperrter Speicher — egal */ }
@@ -204,6 +210,8 @@ export function laden() {
     if (d.ziel) state.ziel = d.ziel;
     if (d.format) state.format = d.format;
     if (d.layout) state.layout = d.layout;
+    if (d.passung) state.passung = d.passung;
+    if (d.randfarbe) state.randfarbe = d.randfarbe;
     state.eingerichtet = !!d.eingerichtet;
     state.ansicht = state.eingerichtet ? "studio" : "onboarding";
   } catch (e) { /* kaputter Eintrag — mit der Vorgabe weitermachen */ }

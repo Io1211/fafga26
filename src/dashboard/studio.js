@@ -50,10 +50,12 @@ function markup() {
   </div>
 
   <div class="block">
-    <h3>Untertitel fürs Video <span class="eyebrow" id="poCardsLbl" style="font-weight:400"></span></h3>
+    <h3>Die Textzeilen <span class="eyebrow" id="poCardsLbl" style="font-weight:400"></span></h3>
     <div class="cards" id="poCards"></div>
-    <p class="hint">Eine Wortgruppe pro Karte, 0,8 bis 1,2 Sekunden. Ein Klick setzt das farbige
-    Schlüsselwort — eines pro Aussage, nicht mehr.</p>
+    <p class="hint"><b>Eine Karte ist eine Zeile des Overlays.</b> Im Bild stehen alle
+    untereinander, im Video werden sie nacheinander eingeblendet — deshalb die Zeitangabe.
+    <b>Ein Klick färbt die Zeile</b> in der Hausfarbe; nochmal klicken hebt es auf.
+    Höchstens eine Zeile pro Post einfärben, sonst verpufft es.</p>
   </div>
 
   <div class="block">
@@ -96,7 +98,15 @@ function kartenRendern() {
     m.className = "m";
     m.textContent = `${k.dur.toFixed(2)} s · ${k.text.length} Z.`;
     d.append(t, m);
-    d.onclick = () => { k.key = !k.key; setzePost(p); };
+    // Der Klick setzt die FARBIGE ZEILE des ganzen Posts. Vorher wurde nur
+    // ein Flag auf der Karte gesetzt, das der Renderer nie gelesen hat —
+    // sichtbar passierte dadurch nichts.
+    d.onclick = () => {
+      const neu = (p.key === k.text) ? "" : k.text;
+      p.key = neu;
+      p.cards.forEach(x => { x.key = (x.text === neu); });
+      setzePost(p);
+    };
     wrap.append(d);
   });
   const n = p.cards.length;

@@ -68,10 +68,11 @@ FLECK.</textarea></label>
     </div>
 
     <div class="block">
-      <h3>Untertitel-Karten</h3>
+      <h3>Die Textzeilen</h3>
       <div class="cards" id="wbCards"></div>
-      <p class="hint">Aus den Overlay-Zeilen erzeugt. Klick setzt die farbige Karte.
-      Eine Wortgruppe, 0,8–1,2 s, höchstens 15 Zeichen.</p>
+      <p class="hint"><b>Eine Karte ist eine Zeile des Overlays.</b> Im Bild stehen alle
+      untereinander, im Video nacheinander — daher die Zeitangabe. <b>Klick färbt die Zeile</b>
+      in der Hausfarbe, nochmal klicken hebt es auf.</p>
     </div>
   </section>
 </div>
@@ -88,7 +89,9 @@ import * as editor from "./editor.js";
 state.motive = [
   { src: "../assets/motiv-haus.jpg",   label: "Das Haus von außen" },
   { src: "../assets/motiv-arbeit.jpg", label: "Bei der Arbeit" },
-  { src: "../assets/motiv-event.jpg",  label: "Vom Event" }
+  { src: "../assets/kidu-halle.jpg",   label: "KIDU · Halle mit Bühne" },
+  { src: "../assets/kidu-teams.jpg",   label: "KIDU · Teams bei der Arbeit" },
+  { src: "../assets/motiv-event.jpg",  label: "KIDU · Handout" }
 ];
 
 function kartenAus(zeilen, key) {
@@ -130,7 +133,15 @@ function kartenZeigen() {
     m.className = "m";
     m.textContent = `${k.dur.toFixed(2)} s · ${k.text.length} Z.`;
     d.append(t, m);
-    d.onclick = () => { k.key = !k.key; setzePost(state.post); kartenZeigen(); };
+    d.onclick = () => {
+      const p2 = state.post;
+      const neu = (p2.key === k.text) ? "" : k.text;
+      p2.key = neu;
+      p2.cards.forEach(x => { x.key = (x.text === neu); });
+      $("#wbKey").value = neu;
+      setzePost(p2);
+      kartenZeigen();
+    };
     wrap.append(d);
   });
 }
@@ -145,18 +156,20 @@ document.querySelectorAll("#wbModus button").forEach(b => b.onclick = () => {
   $("#wbHaus").value  = state.haus.name;
   $("#wbFarbe").value = state.haus.farbe;
   if (istEvent) {
-    $("#wbKicker").value = "Innsbruck · 20. September";
+    $("#wbKicker").value = "Messe Innsbruck · 20. September";
     $("#wbHead").value   = "HEUTE WIRD\nGEBAUT.\nNICHT GEREDET.";
     $("#wbKey").value    = "GEBAUT.";
     $("#wbCta").value    = "Messe Innsbruck, bis 15 Uhr";
     $("#wbDatum").value  = state.haus.datum;
     $("#wbOrtDetail").value = state.haus.ortDetail;
+    setzeHaus({ logo: "../assets/kidu-logo.png" });
     state.motiv = 2;
   } else {
     $("#wbKicker").value = "Navis · Berggasthof";
     $("#wbHead").value   = "SEIT 1934\nAM SELBEN\nFLECK.";
     $("#wbKey").value    = "SEIT 1934";
     $("#wbCta").value    = "Tisch reservieren: 05278 / 2043";
+    setzeHaus({ logo: null });
     state.motiv = 0;
   }
   ausFormular();
