@@ -123,6 +123,13 @@ export const state = {
   format: "story",    // "story" (1080×1920) | "post" (1080×1350)
   layout: "unten",    // "unten" | "mitte" | "oben" — wo der Textblock sitzt
   passung: "unschaerfe", // "unschaerfe" | "fuellend" | "rand"
+  vorlage: "klassisch",  // welche Vorlage zuletzt gewählt wurde
+  /** Alle Gestaltungsregler. Siehe foto-video-editor/image.js · VORLAGEN. */
+  stil: {
+    schrift: "grotesk", groesse: 1, ausricht: "links", textPos: "unten",
+    textRand: "kontur", logoAn: true, logoGroesse: 1, logoPos: "oben-links",
+    unschaerfe: 26, abdunkeln: 1
+  },
   randfarbe: "#ffffff",  // nur bei passung === "rand"
   raster: false,      // Hilfslinien im Editor
   ansicht: "onboarding", // "onboarding" | "studio"
@@ -160,6 +167,13 @@ export function setzeKi(teil) {
   melden("ki");
 }
 
+/** Einzelne Gestaltungsregler setzen (Modul 1). */
+export function setzeStil(teil) {
+  Object.assign(state.stil, teil);
+  sichern();
+  melden("post");
+}
+
 /** Ziel, Format, Raster — alles, was den Post betrifft, aber keinem Modul allein gehört. */
 export function setzeOption(teil) {
   Object.assign(state, teil);
@@ -195,6 +209,8 @@ export function sichern() {
       format: state.format,
       layout: state.layout,
       passung: state.passung,
+      vorlage: state.vorlage,
+      stil: state.stil,
       randfarbe: state.randfarbe,
       eingerichtet: state.eingerichtet
     }));
@@ -211,6 +227,8 @@ export function laden() {
     if (d.format) state.format = d.format;
     if (d.layout) state.layout = d.layout;
     if (d.passung) state.passung = d.passung;
+    if (d.vorlage) state.vorlage = d.vorlage;
+    if (d.stil) Object.assign(state.stil, d.stil);
     if (d.randfarbe) state.randfarbe = d.randfarbe;
     state.eingerichtet = !!d.eingerichtet;
     state.ansicht = state.eingerichtet ? "studio" : "onboarding";

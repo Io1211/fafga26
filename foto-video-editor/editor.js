@@ -9,10 +9,10 @@
  * Liest:     state.post (von Modul 4), state.haus (von Modul 1)
  */
 
-import { state, setzeMotiv, motivHinzu, setzeOption, setzeHaus, on } from "../src/core/state.js";
+import { state, setzeMotiv, motivHinzu, setzeOption, setzeHaus, setzeStil, on } from "../src/core/state.js";
 import { $, $$, toast, slug, bildHolen } from "../src/core/dom.js";
 import { farbenAus, gutAufDunkel } from "./farben.js";
-import { zeichnePost, alsPng } from "./image.js";
+import { zeichnePost, alsPng, VORLAGEN, SCHRIFTEN, TEXTRAENDER, LOGOPOSITIONEN } from "./image.js";
 import { baueVideo } from "./video.js";
 
 let stageCanvas = null;
@@ -52,6 +52,12 @@ export function bedienungMarkup() {
     </div>
   </div>
   <div class="block">
+    <h3>Vorlage</h3>
+    <div class="vorlagen" id="edVorlagen"></div>
+    <p class="hint" id="edVorlageHint"></p>
+  </div>
+
+  <div class="block">
     <h3>Bild im Format</h3>
     <div class="seg" id="edSegPassung" role="group" aria-label="Wie das Foto ins Format kommt">
       <button data-v="unschaerfe" aria-pressed="true">Unschärfe</button>
@@ -79,17 +85,58 @@ export function bedienungMarkup() {
     <p class="hint" id="edFarbeHint">Beim Hochladen eines Logos werden dessen Farben vorgeschlagen.</p>
   </div>
 
-  <div class="block">
-    <h3>Textblock</h3>
-    <div class="seg" id="edSegLayout" role="group" aria-label="Wo der Text sitzt">
-      <button data-v="oben">Oben</button>
-      <button data-v="mitte">Mitte</button>
-      <button data-v="unten" aria-pressed="true">Unten</button>
+  <details class="fein" id="edFein">
+    <summary>Feineinstellungen</summary>
+    <div class="feininhalt">
+
+      <div class="block">
+        <h3>Schrift</h3>
+        <div class="seg" id="edSegSchrift" role="group" aria-label="Schriftcharakter"></div>
+        <label class="regler"><span>Textgröße <b id="edGroesseWert">100 %</b></span>
+          <input type="range" id="edGroesse" min="60" max="150" step="2"></label>
+        <div class="seg" id="edSegAusricht" role="group" aria-label="Ausrichtung">
+          <button data-v="links">Links</button>
+          <button data-v="mitte">Mitte</button>
+          <button data-v="rechts">Rechts</button>
+        </div>
+      </div>
+
+      <div class="block">
+        <h3>Text vom Bild trennen</h3>
+        <div class="seg" id="edSegRand" role="group" aria-label="Textrand"></div>
+        <p class="hint" id="edRandHint"></p>
+      </div>
+
+      <div class="block">
+        <h3>Textblock</h3>
+        <div class="seg" id="edSegLayout" role="group" aria-label="Wo der Text sitzt">
+          <button data-v="oben">Oben</button>
+          <button data-v="mitte">Mitte</button>
+          <button data-v="unten">Unten</button>
+        </div>
+        <p class="hint">„Unten“ ist die Vorgabe: die Grundlinie liegt bei 0,72 statt ganz unten,
+        weil darunter die Aufforderung Platz braucht und Instagram in der Story eigene
+        Bedienelemente einblendet.</p>
+      </div>
+
+      <div class="block">
+        <h3>Logo</h3>
+        <label class="schalter"><input type="checkbox" id="edLogoAn"> <span>Logo zeigen</span></label>
+        <div class="posgitter" id="edLogoPos"></div>
+        <label class="regler"><span>Logogröße <b id="edLogoGrWert">100 %</b></span>
+          <input type="range" id="edLogoGr" min="40" max="160" step="5"></label>
+      </div>
+
+      <div class="block">
+        <h3>Hintergrund</h3>
+        <label class="regler"><span>Unschärfe <b id="edBlurWert">26</b></span>
+          <input type="range" id="edBlur" min="0" max="60" step="2"></label>
+        <label class="regler"><span>Abdunkeln <b id="edDunkelWert">100 %</b></span>
+          <input type="range" id="edDunkel" min="0" max="180" step="5"></label>
+      </div>
+
     </div>
-    <p class="hint">„Unten“ ist die Vorgabe: die Grundlinie liegt bei 0,72 statt ganz unten,
-    weil darunter die Aufforderung Platz braucht und Instagram in der Story eigene
-    Bedienelemente einblendet.</p>
-  </div>
+  </details>
 
   <div class="block">
     <h3>Motiv</h3>
@@ -194,6 +241,23 @@ async function videoBauen() {
  *  Aufbau
  * ------------------------------------------------------------------ */
 
+/**
+ * Canvas greift NICHT auf das CSS-Laden zurück: ist die Schrift beim
+ * Zeichnen noch nicht da, nimmt es stillschweigend die Ersatzschrift und
+ * niemand merkt es. Deshalb alle drei Charaktere vorher anfordern.
+ */
+async function schriftenLaden() {
+  const wunsch = [
+    '800 100px "Inter"', '600 100px "Inter"', '500 100px "Inter"',
+    '800 100px "Fraunces"',
+    '600 100px "Oswald"', '700 100px "Oswald"'
+  ];
+  try {
+    await Promise.all(wunsch.map(f => document.fonts.load(f)));
+    await document.fonts.ready;
+  } catch (e) { /* ohne Webfonts sieht es anders aus, funktioniert aber */ }
+}
+
 export function aufbauen(buehne, bedienung) {
   // Ersetzt auch den Platzhalter, den das Dashboard vorhält.
   buehne.innerHTML = markup();
@@ -204,6 +268,116 @@ export function aufbauen(buehne, bedienung) {
     setzeOption({ raster: !state.raster });
     $("#edRaster").setAttribute("aria-pressed", String(state.raster));
   };
+
+
+  /* ================= Vorlagen (K5, K9) ================= */
+  const vw = $("#edVorlagen");
+  Object.entries(VORLAGEN).forEach(([id, v]) => {
+    const b = document.createElement("button");
+    b.className = "vorlage";
+    b.dataset.v = id;
+    b.textContent = v.name;
+    b.onclick = () => {
+      setzeOption({ vorlage: id });
+      setzeStil({ ...v.stil });
+      vorlagenZeigen();
+      reglerZeigen();
+    };
+    vw.append(b);
+  });
+  function vorlagenZeigen() {
+    $$("#edVorlagen .vorlage").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.v === state.vorlage)));
+    $("#edVorlageHint").textContent = VORLAGEN[state.vorlage]?.hinweis || "";
+  }
+
+  /* ================= Schrift ================= */
+  const sw = $("#edSegSchrift");
+  Object.entries(SCHRIFTEN).forEach(([id, f]) => {
+    const b = document.createElement("button");
+    b.dataset.v = id;
+    b.textContent = f.name;
+    b.onclick = () => { setzeStil({ schrift: id }); reglerZeigen(); };
+    sw.append(b);
+  });
+
+  /* ================= Textrand ================= */
+  const randHint = {
+    kontur:   "Schwarze Kontur um jede Glyphe. Trägt auf jedem Untergrund und ist der sichere Standard.",
+    flaeche:  "Jede Zeile bekommt einen Balken. Das Schlüsselwort läuft auf der Hausfarbe.",
+    schatten: "Weicher Schatten. Dezent, braucht aber ein halbwegs ruhiges Motiv.",
+    ohne:     "Nichts. Nur sinnvoll, wenn die Abdunklung reicht — mit dem Raster kontrollieren."
+  };
+  const rw = $("#edSegRand");
+  Object.entries(TEXTRAENDER).forEach(([id, name]) => {
+    const b = document.createElement("button");
+    b.dataset.v = id;
+    b.textContent = name;
+    b.onclick = () => { setzeStil({ textRand: id }); reglerZeigen(); };
+    rw.append(b);
+  });
+
+  /* ================= Logo-Position als Gitter (K7) ================= */
+  const pw = $("#edLogoPos");
+  Object.keys(LOGOPOSITIONEN).forEach(id => {
+    const b = document.createElement("button");
+    b.dataset.v = id;
+    b.className = "pos " + id;
+    b.title = id.replace("-", " ");
+    b.setAttribute("aria-label", "Logo " + id.replace("-", " "));
+    b.onclick = () => { setzeStil({ logoPos: id }); reglerZeigen(); };
+    pw.append(b);
+  });
+
+  /* ================= Ausrichtung und Textblock ================= */
+  $$("#edSegAusricht button").forEach(b => b.onclick = () => {
+    setzeStil({ ausricht: b.dataset.v }); reglerZeigen();
+  });
+  $$("#edSegLayout button").forEach(b => b.onclick = () => {
+    setzeStil({ textPos: b.dataset.v }); reglerZeigen();
+  });
+
+  /* ================= Regler ================= */
+  $("#edGroesse").oninput = e => {
+    setzeStil({ groesse: e.target.value / 100 });
+    $("#edGroesseWert").textContent = e.target.value + " %";
+  };
+  $("#edLogoAn").onchange = e => { setzeStil({ logoAn: e.target.checked }); };
+  $("#edLogoGr").oninput = e => {
+    setzeStil({ logoGroesse: e.target.value / 100 });
+    $("#edLogoGrWert").textContent = e.target.value + " %";
+  };
+  $("#edBlur").oninput = e => {
+    setzeStil({ unschaerfe: Number(e.target.value) });
+    $("#edBlurWert").textContent = e.target.value;
+  };
+  $("#edDunkel").oninput = e => {
+    setzeStil({ abdunkeln: e.target.value / 100 });
+    $("#edDunkelWert").textContent = e.target.value + " %";
+  };
+
+  /** Alle Bedienelemente auf den aktuellen Stil setzen. */
+  function reglerZeigen() {
+    const st = state.stil;
+    const setz = (sel, wert) => $$(sel + " button").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.v === wert)));
+    setz("#edSegSchrift", st.schrift);
+    setz("#edSegRand", st.textRand);
+    setz("#edSegAusricht", st.ausricht);
+    setz("#edSegLayout", st.textPos);
+    $$("#edLogoPos .pos").forEach(b =>
+      b.setAttribute("aria-pressed", String(b.dataset.v === st.logoPos)));
+    $("#edGroesse").value = Math.round(st.groesse * 100);
+    $("#edGroesseWert").textContent = Math.round(st.groesse * 100) + " %";
+    $("#edLogoAn").checked = st.logoAn !== false;
+    $("#edLogoGr").value = Math.round(st.logoGroesse * 100);
+    $("#edLogoGrWert").textContent = Math.round(st.logoGroesse * 100) + " %";
+    $("#edBlur").value = st.unschaerfe;
+    $("#edBlurWert").textContent = st.unschaerfe;
+    $("#edDunkel").value = Math.round(st.abdunkeln * 100);
+    $("#edDunkelWert").textContent = Math.round(st.abdunkeln * 100) + " %";
+    $("#edRandHint").textContent = randHint[st.textRand] || "";
+  }
 
   /* --- Passung --- */
   const passungHint = {
@@ -281,12 +455,6 @@ export function aufbauen(buehne, bedienung) {
       `${brauchbar.length} Farben aus dem Logo. Die kräftigste ist übernommen — anklicken zum Wechseln.`;
   };
 
-  $$("#edSegLayout button").forEach(b => b.onclick = () => {
-    $$("#edSegLayout button").forEach(x => x.setAttribute("aria-pressed", "false"));
-    b.setAttribute("aria-pressed", "true");
-    setzeOption({ layout: b.dataset.v });
-  });
-
   $$("#edSegFormat button").forEach(b => b.onclick = () => {
     $$("#edSegFormat button").forEach(x => x.setAttribute("aria-pressed", "false"));
     b.setAttribute("aria-pressed", "true");
@@ -328,12 +496,15 @@ export function aufbauen(buehne, bedienung) {
   on("motiv", () => { motiveRendern(); neuZeichnen(); });
 
   // Segmente auf den gespeicherten Zustand setzen
-  $$("#edSegLayout button").forEach(b =>
-    b.setAttribute("aria-pressed", String(b.dataset.v === state.layout)));
+  vorlagenZeigen();
+  reglerZeigen();
   passungZeigen();
   $$("#edSegFormat button").forEach(b =>
     b.setAttribute("aria-pressed", String(b.dataset.v === state.format)));
 
   motiveRendern();
   neuZeichnen();
+  // Nach dem Laden der Schriften noch einmal — sonst steht die erste
+  // Vorschau in der Ersatzschrift.
+  schriftenLaden().then(neuZeichnen);
 }
