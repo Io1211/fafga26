@@ -95,7 +95,12 @@
   letter-spacing: -.01em; }
 
 /* ---------------- Bühne ---------------- */
-.fve.stage, .fve .stage { display: flex; flex-direction: column; gap: 13px; align-items: center; }
+/* Die Vorschau bleibt stehen, während rechts weitergescrollt wird.
+   Ohne das scrollt man beim Feineinstellen genau das weg, was man beurteilen
+   will. `top` lässt Platz für die Kopfzeile der Gastseite. */
+.fve.stage, .fve .stage { display: flex; flex-direction: column; gap: 13px;
+  align-items: center; position: sticky; top: 16px; align-self: start; }
+@media (max-width: 1100px) { .fve.stage, .fve .stage { position: static; } }
 .fve .stagehead { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 360px; }
 .fve .stagehead .eyebrow { margin-right: auto; }
 

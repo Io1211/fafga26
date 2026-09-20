@@ -11,7 +11,7 @@
 
 import { state, setzeMotiv, motivHinzu, setzeOption, setzeHaus, setzeStil, on } from "./zustand.js";
 import { $, $$, toast, slug, bildHolen } from "./werkzeug.js";
-import { farbenAus, gutAufDunkel } from "./farben.js";
+import { farbenAus, gutAufDunkel, freigestellt, hatDurchsicht } from "./farben.js";
 import * as eigeneVorlagen from "./vorlagen.js";
 import { zeichnePost, alsBild, VORLAGEN, SCHRIFTEN, TEXTRAENDER, LOGOPOSITIONEN, STANDARDSTIL } from "./image.js";
 import { baueVideo } from "./video.js";
@@ -46,12 +46,24 @@ function markup() {
 export function bedienungMarkup() {
   return `
   <div class="block">
+    <h3>Motiv</h3>
+    <div class="motive" id="edMotive"></div>
+    <div class="drop" id="edDrop">Fotos hierher ziehen oder klicken</div>
+    <div class="row tight">
+      <button class="btn" id="edOrdner">Ganzen Ordner wählen</button>
+      <button class="btn" id="edLeeren" hidden>Eigene entfernen</button>
+    </div>
+
+  <div class="block">
     <h3>Format</h3>
     <div class="seg" id="edSegFormat" role="group" aria-label="Format">
       <button data-v="story" aria-pressed="true">Story 9:16</button>
       <button data-v="post" aria-pressed="false">Beitrag 4:5</button>
     </div>
   </div>
+    <input type="file" id="edOrdnerFile" accept="image/*" multiple webkitdirectory directory hidden>
+  </div>
+
   <div class="block">
     <h3>Vorlage</h3>
     <div class="vorlagen" id="edVorlagen"></div>
@@ -85,6 +97,9 @@ export function bedienungMarkup() {
       <button class="btn" id="edLogoWeg" hidden>Entfernen</button>
       <input type="color" id="edFarbe" aria-label="Hausfarbe">
     </div>
+    <label class="schalter" id="edFreiZeile" hidden>
+      <input type="checkbox" id="edFrei"> <span>Weißen Hintergrund entfernen</span>
+    </label>
     <div class="palette" id="edPalette" hidden></div>
     <p class="hint" id="edFarbeHint">Beim Hochladen eines Logos werden dessen Farben vorgeschlagen.</p>
   </div>
@@ -155,17 +170,7 @@ export function bedienungMarkup() {
 
     </div>
   </details>
-
-  <div class="block">
-    <h3>Motiv</h3>
-    <div class="motive" id="edMotive"></div>
-    <div class="drop" id="edDrop">Fotos hierher ziehen oder klicken</div>
-    <div class="row tight">
-      <button class="btn" id="edOrdner">Ganzen Ordner wählen</button>
-      <button class="btn" id="edLeeren" hidden>Eigene entfernen</button>
-    </div>
-    <input type="file" id="edOrdnerFile" accept="image/*" multiple webkitdirectory directory hidden>
-  </div>`;
+`;
 }
 
 function motiveRendern() {
@@ -298,8 +303,10 @@ async function schriftenLaden() {
 export function aufbauen(buehne, bedienung) {
   // Kapselklasse selbst setzen: die Gastseite muss im Markup nichts
   // vorbereiten, und ohne sie greift kein einziger Stil des Editors.
-  buehne.classList.add("fve");
-  bedienung.classList.add("fve");
+  // `stage` muss der Editor selbst setzen: eingebettet in React bekommt er
+  // nur ein leeres <div>, und ohne die Klasse greift das Festpinnen nicht.
+  buehne.classList.add("fve", "stage");
+  bedienung.classList.add("fve", "panel");
   // Ersetzt auch den Platzhalter, den das Dashboard vorhält.
   buehne.innerHTML = markup();
   bedienung.innerHTML = bedienungMarkup();
@@ -515,14 +522,42 @@ export function aufbauen(buehne, bedienung) {
   };
   $("#edLogoBtn").onclick = () => $("#edLogoFile").click();
   $("#edLogoWeg").onclick = () => {
+    logoOriginal = null;
+    $("#edFreiZeile").hidden = true;
     setzeHaus({ logo: null, logoFarben: [] });
     paletteZeigen();
   };
+  /* Das hochgeladene Original merken. Ohne das ließe sich das Freistellen
+     nicht wieder abschalten — aus dem freigestellten Bild bekommt man das
+     Weiß nicht zurück. */
+  let logoOriginal = null;
+
   $("#edLogoFile").onchange = async e => {
     const f = e.target.files?.[0];
     if (!f) return;
-    await paletteAusLogo(URL.createObjectURL(f), true);
+    logoOriginal = URL.createObjectURL(f);
+    const im = await bildHolen(logoOriginal);
+    // JPEG kennt keine Durchsichtigkeit: dort ist Freistellen fast immer
+    // gewollt. Bei einem PNG mit Alphakanal wäre es dagegen schädlich.
+    const vorschlag = im ? !hatDurchsicht(im) : false;
+    $("#edFrei").checked = vorschlag;
+    $("#edFreiZeile").hidden = false;
+    await logoAnwenden(vorschlag, true);
   };
+
+  $("#edFrei").onchange = () => logoAnwenden($("#edFrei").checked, false);
+
+  async function logoAnwenden(frei, farbenNeu) {
+    if (!logoOriginal) return;
+    let quelle = logoOriginal;
+    if (frei) {
+      const im = await bildHolen(logoOriginal);
+      const ohneWeiss = im ? freigestellt(im) : null;
+      if (ohneWeiss) quelle = ohneWeiss;
+      else toast("Freistellen ging nicht — das Bild ist fremder Herkunft.");
+    }
+    await paletteAusLogo(quelle, farbenNeu);
+  }
 
   /**
    * Farben aus dem Logo ziehen und DAUERHAFT als Auswahl anbieten (K5).
