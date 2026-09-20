@@ -296,6 +296,10 @@ async function schriftenLaden() {
 }
 
 export function aufbauen(buehne, bedienung) {
+  // Kapselklasse selbst setzen: die Gastseite muss im Markup nichts
+  // vorbereiten, und ohne sie greift kein einziger Stil des Editors.
+  buehne.classList.add("fve");
+  bedienung.classList.add("fve");
   // Ersetzt auch den Platzhalter, den das Dashboard vorhält.
   buehne.innerHTML = markup();
   bedienung.innerHTML = bedienungMarkup();

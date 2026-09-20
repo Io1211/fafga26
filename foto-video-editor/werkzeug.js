@@ -29,10 +29,10 @@ export const slug = s => String(s).toLowerCase()
 let toastTimer;
 /** Kurze Rückmeldung unten am Bildschirm. */
 export function toast(text) {
-  let el = $(".toast");
+  let el = $(".fve-toast");
   if (!el) {
     el = document.createElement("div");
-    el.className = "toast";
+    el.className = "fve-toast";
     el.setAttribute("role", "status");
     document.body.append(el);
   }

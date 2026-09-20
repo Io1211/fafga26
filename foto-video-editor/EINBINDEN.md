@@ -5,34 +5,58 @@ außerhalb, bringt seinen eigenen Zustand mit und funktioniert auch ohne Backend
 Zum Ausprobieren: `foto-video-editor/foto-video-editor.html` öffnen (über einen Server,
 ES-Module laufen nicht über `file://`).
 
-## In `app/studio.html` einhängen
+## In die React-App einhängen
 
-```html
-<link rel="stylesheet" href="../foto-video-editor/basis.css">
-<link rel="stylesheet" href="../foto-video-editor/editor.css">
+`frontend/src/FotoVideoEditor.tsx` ist die Brücke. Sie ist die einzige Stelle, an der React
+vom Editor weiß. In `App.tsx` reicht der Austausch einer Zeile:
 
-<section class="stage" id="editor-slot"></section>
-<section id="editor-bedienung"></section>
+```tsx
+import FotoVideoEditor from "./FotoVideoEditor";
 
-<script type="module">
-  import * as editor from "../foto-video-editor/editor.js";
-  import { hausLaden, uebernehmeCopy, laden } from "../foto-video-editor/zustand.js";
-
-  laden();                       // gesicherte Vorlage und Stil
-  await hausLaden();             // holt GET /api/house, still wenn kein Server da ist
-
-  editor.aufbauen(
-    document.querySelector("#editor-slot"),
-    document.querySelector("#editor-bedienung")
-  );
-
-  // Wenn ein Post vom Backend kommt (POST /api/posts → PostOut.text):
-  uebernehmeCopy(antwort.text);
-</script>
+// bisher:  {view === "studio" && <Studio />}
+{view === "studio" && <FotoVideoEditor house={house} />}
 ```
 
-`aufbauen()` ersetzt den Inhalt beider Elemente selbst. Das erste bekommt die Vorschau
-samt Sicherungsknöpfen, das zweite die Bedienung (Vorlage, Format, Motiv, Feineinstellungen).
+Die linke Übersicht bleibt unverändert. `house` kommt schon aus `api.house()` in `App.tsx`
+und wird durchgereicht — mehr braucht es nicht.
+
+Kommt später ein Textvorschlag vom Backend dazu:
+
+```tsx
+const post = await api.post(datei, ziel, notiz);
+<FotoVideoEditor house={house} copy={post.text} />
+```
+
+Das fertige Bild holt man über `aktuellesBild()` aus derselben Datei — dieselbe
+Zeichenroutine wie die Vorschau, also kein Auseinanderlaufen.
+
+### Was schon vorbereitet ist
+
+- **Typdeklarationen** (`*.d.ts` neben den JS-Dateien), damit `tsc -b` im Build durchläuft
+- **`vite.config.ts`**: `server.fs.allow` erlaubt dem Entwicklungsserver den Ordner außerhalb
+  von `frontend/`; beim Bauen folgt Rollup dem relativen Pfad ohnehin
+- **`.fve-raum`** in `styles.css` legt Vorschau und Bedienung nebeneinander
+- Geprüft: `tsc -b` und `vite build` laufen durch, der Editor landet im Bündel
+  (CSS 9,98 → 20,14 kB, JS 162 → 190 kB)
+
+### Kapselung
+
+Alles Editor-CSS hängt unter `.fve`, auch die Gestaltungsmerkmale. Ohne diese Klasse greift
+kein einziger Stil. Das ist nötig, weil es `.panel`, `.studio`, `.chip`, `.brand`, `.drop`
+und `.eyebrow` in beiden Projekten gibt — ohne Kapselung überschreiben sie sich gegenseitig.
+`aufbauen()` setzt die Klasse selbst, im Markup muss nichts vorbereitet werden.
+
+## Ohne Build
+
+`foto-video-editor/foto-video-editor.html` ist die Werkbank: reines JavaScript, kein Bündel,
+kein Server nötig außer einem, der Dateien ausliefert.
+
+```bash
+python3 serve.py
+```
+
+Dann <http://localhost:8000/foto-video-editor/foto-video-editor.html>. ES-Module laufen nicht
+über `file://`, ein Doppelklick zeigt eine leere Seite.
 
 ## Der Vertrag
 
