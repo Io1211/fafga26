@@ -92,3 +92,16 @@ export function hausLaden(basis?: string): Promise<boolean>;
 export function sichern(): void;
 export function laden(): void;
 export function zuruecksetzen(): void;
+
+/* ---- KI-Brücke ----
+   Der Editor weiß nichts über das Backend. Die Gastseite hinterlegt hier
+   eine Funktion; ist keine da, bleibt das Anweisungsfeld ausgeblendet. */
+export function setzeKiHandler(
+  fn: (anweisung: string, foto: Blob) => Promise<unknown>
+): void;
+export function hatKi(): boolean;
+export function kiFragen(anweisung: string, foto: Blob): Promise<any>;
+
+/** Merkt, dass der Benutzer ein Feld selbst gesetzt hat — das überschreibt
+    uebernehmeHaus() dann nicht mehr. */
+export function merkeEigene(feld: "farbe" | "logo"): void;

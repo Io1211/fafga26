@@ -9,7 +9,8 @@
  * Liest:     state.post (von Modul 4), state.haus (von Modul 1)
  */
 
-import { state, setzeMotiv, motivHinzu, setzeOption, setzeHaus, setzeStil, on } from "./zustand.js";
+import { state, setzeMotiv, motivHinzu, setzeOption, setzeHaus, setzeStil, setzePost,
+         merkeEigene, hatKi, kiFragen, kartenAus, on } from "./zustand.js";
 import { $, $$, toast, slug, bildHolen } from "./werkzeug.js";
 import { farbenAus, gutAufDunkel, freigestellt, hatDurchsicht } from "./farben.js";
 import * as eigeneVorlagen from "./vorlagen.js";
@@ -48,11 +49,34 @@ export function bedienungMarkup() {
   <div class="block">
     <h3>Motiv</h3>
     <div class="motive" id="edMotive"></div>
-    <div class="drop" id="edDrop">Fotos hierher ziehen oder klicken</div>
+    <div class="drop klein" id="edDrop">Fotos hierher ziehen oder klicken</div>
     <div class="row tight">
       <button class="btn" id="edOrdner">Ganzen Ordner wählen</button>
       <button class="btn" id="edLeeren" hidden>Eigene entfernen</button>
     </div>
+
+  <div class="block" id="edKiBlock" hidden>
+    <h3>Text von der KI</h3>
+    <textarea id="edPrompt" rows="2"
+      placeholder="Was soll rüberkommen? z. B. „Wir suchen einen Lehrling, locker und ehrlich“"></textarea>
+    <div class="row tight">
+      <button class="btn primary grow" id="edKi">Texte vorschlagen</button>
+      <button class="btn" id="edKiStop" hidden>Abbrechen</button>
+    </div>
+    <p class="hint" id="edKiHint">Füllt Kicker, Zeilen und Aufforderung. Alles bleibt danach änderbar.</p>
+  </div>
+
+  <div class="block">
+    <h3>Text</h3>
+    <label class="f"><span>Kicker · kleine Zeile darüber</span>
+      <input type="text" id="edKicker"></label>
+    <label class="f"><span>Overlay · eine Zeile je Zeile, höchstens 15 Zeichen</span>
+      <textarea id="edHead" rows="4"></textarea></label>
+    <label class="f"><span>Farbige Zeile</span>
+      <select id="edKey"></select></label>
+    <label class="f"><span>Aufforderung am Schluss</span>
+      <input type="text" id="edCta"></label>
+  </div>
 
   <div class="block">
     <h3>Format</h3>
@@ -491,6 +515,89 @@ export function aufbauen(buehne, bedienung) {
     $("#edRandHint").textContent = randHint[st.textRand] || "";
   }
 
+
+  /* ================= Text bearbeiten ================= */
+  function textZeigen() {
+    const post = state.post;
+    if (!post) return;
+    if (document.activeElement?.id !== "edKicker") $("#edKicker").value = post.kicker || "";
+    if (document.activeElement?.id !== "edHead") $("#edHead").value = post.head.join("\n");
+    if (document.activeElement?.id !== "edCta") {
+      $("#edCta").value = state.ziel === "gast" ? state.haus.ctaGast : state.haus.ctaTeam;
+    }
+    const w = $("#edKey");
+    const vorher = post.key;
+    w.innerHTML = '<option value="">— keine —</option>' +
+      post.head.map(z => `<option${z === vorher ? " selected" : ""}>${z.replace(/[&<>]/g,
+        c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]))}</option>`).join("");
+  }
+
+  /** Aus den Feldern einen neuen Post bauen. */
+  function textUebernehmen() {
+    const head = $("#edHead").value.split("\n")
+      .map(z => z.trim().toUpperCase()).filter(Boolean);
+    const alt = state.post || {};
+    const key = $("#edKey").value && head.includes($("#edKey").value) ? $("#edKey").value : "";
+    setzePost({
+      ...alt,
+      kicker: $("#edKicker").value,
+      head: head.length ? head : ["OHNE TEXT"],
+      key,
+      caption: alt.caption || "",
+      tags: alt.tags || "",
+      quellen: alt.quellen || [],
+      cards: kartenAus(head, key)
+    });
+    textZeigen();
+  }
+
+  ["#edKicker", "#edHead"].forEach(sel => $(sel).oninput = textUebernehmen);
+  $("#edKey").onchange = textUebernehmen;
+  $("#edCta").oninput = e => {
+    setzeHaus(state.ziel === "gast" ? { ctaGast: e.target.value } : { ctaTeam: e.target.value });
+  };
+
+  /* ================= KI ================= */
+  let kiAbbruch = null;
+  function kiZeigen() { $("#edKiBlock").hidden = !hatKi(); }
+
+  $("#edKi").onclick = async () => {
+    const knopf = $("#edKi");
+    const anweisung = $("#edPrompt").value.trim();
+    const m = state.motive[state.motiv];
+    if (!m?.blob) {
+      toast("Dafür braucht es ein eigenes Foto — die Beispielbilder gehen nicht.");
+      return;
+    }
+    knopf.disabled = true;
+    knopf.textContent = "Denkt …";
+    $("#edKiHint").textContent = "Das Foto geht ans Modell, das dauert ein paar Sekunden.";
+    try {
+      const copy = await kiFragen(anweisung, m.blob);
+      const head = (copy.head || []).map(z => String(z).toUpperCase().trim()).filter(Boolean);
+      if (!head.length) throw new Error("Die Antwort enthielt keine Zeilen.");
+      setzePost({
+        kicker: copy.kicker || "",
+        head,
+        key: String(copy.key || head[head.length - 1]).toUpperCase(),
+        caption: copy.caption || "",
+        tags: Array.isArray(copy.hashtags) ? copy.hashtags.join(" ") : (copy.hashtags || ""),
+        quellen: copy.quellen || [],
+        cards: kartenAus(head, copy.key)
+      });
+      textZeigen();
+      $("#edKiHint").textContent = "Vorschlag übernommen — alles unten änderbar.";
+      toast("Texte vorgeschlagen.");
+    } catch (e) {
+      $("#edKiHint").textContent = "Hat nicht geklappt: " + (e?.message || e);
+      toast("Die KI hat nicht geantwortet.");
+    } finally {
+      knopf.disabled = false;
+      knopf.textContent = "Texte vorschlagen";
+      kiAbbruch = null;
+    }
+  };
+
   /* --- Passung --- */
   const passungHint = {
     unschaerfe: "Das Foto bleibt vollständig sichtbar, der Rand wird aus dem eigenen Bild unscharf gefüllt.",
@@ -517,6 +624,7 @@ export function aufbauen(buehne, bedienung) {
   /* --- Logo und Farben --- */
   $("#edFarbe").value = state.haus.farbe;
   $("#edFarbe").oninput = e => {
+    merkeEigene("farbe");
     setzeHaus({ farbe: e.target.value });
     document.documentElement.style.setProperty("--hausfarbe", e.target.value);
   };
@@ -566,6 +674,8 @@ export function aufbauen(buehne, bedienung) {
    * waren sie nur direkt nach dem Hochladen sichtbar.
    */
   async function paletteAusLogo(url, uebernehmen = false) {
+    merkeEigene("logo");
+    if (uebernehmen) merkeEigene("farbe");
     const im = await bildHolen(url);
     const brauchbar = im ? farbenAus(im, 6).filter(gutAufDunkel) : [];
     setzeHaus({ logo: url, logoFarben: brauchbar });
@@ -653,6 +763,10 @@ export function aufbauen(buehne, bedienung) {
   vorlagenZeigen();
   reglerZeigen();
   passungZeigen();
+  textZeigen();
+  kiZeigen();
+  on("post", textZeigen);
+  on("ki", kiZeigen);
   // Trägt der Betrieb bereits ein Logo, dessen Farben aber noch nicht, nachziehen
   if (state.haus.logo && !(state.haus.logoFarben || []).length) paletteAusLogo(state.haus.logo);
   else paletteZeigen();

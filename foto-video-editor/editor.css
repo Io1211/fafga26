@@ -227,3 +227,6 @@
 @media (prefers-reduced-motion: reduce) {
   .fve * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+/* Ablagefeld schlanker — es ist nicht der wichtigste Knopf, nur der zweite Weg */
+.fve .drop.klein { padding: 9px 12px; font-size: 12px; }

@@ -1,74 +1,144 @@
 import { useState } from "react";
-import { api, Idea, Ziel } from "./api";
-import { Haus, Spark, Team } from "./icons";
+import { api, Copy, Ziel } from "./api";
+import { Spark } from "./icons";
+import { state, setzePost } from "../../foto-video-editor/zustand.js";
 
-export default function Ideen() {
-  const [ideen, setIdeen] = useState<Idea[]>([]);
-  const [engine, setEngine] = useState("");
-  const [filter, setFilter] = useState<Ziel | "alle">("alle");
+/**
+ * Caption-Ideen.
+ *
+ * Baut auf dem auf, was im Studio schon steht: Foto, Overlay-Zeilen,
+ * Zielgruppe. Daraus entstehen auf Knopfdruck mehrere fertige Captions mit
+ * Hashtags — drei Anläufe mit unterschiedlichem Ton, damit man vergleichen
+ * kann statt nur einen Vorschlag anzunehmen.
+ *
+ * Alles läuft über POST /api/posts; die Notiz trägt die Tonlage.
+ */
+
+const TONLAGEN = [
+  { id: "kurz", label: "Kurz und direkt",
+    notiz: "Schreib die Caption kurz und direkt. Zwei bis drei Sätze, keine Floskeln." },
+  { id: "geschichte", label: "Mit Geschichte",
+    notiz: "Erzähl in der Caption eine kleine wahre Geschichte aus den Belegen. Persönlich, ohne Werbesprache." },
+  { id: "auffordernd", label: "Mit klarer Aufforderung",
+    notiz: "Die Caption endet mit einer klaren, konkreten Aufforderung. Davor zwei Sätze Inhalt." },
+];
+
+interface Vorschlag { id: string; label: string; copy: Copy }
+
+export default function CaptionIdeen() {
+  const [vorschlaege, setVorschlaege] = useState<Vorschlag[]>([]);
   const [laedt, setLaedt] = useState(false);
+  const [fehler, setFehler] = useState<string | null>(null);
+  const [uebernommen, setUebernommen] = useState<string | null>(null);
+
+  const motiv = state.motive[state.motiv];
+  const foto: Blob | undefined = motiv?.blob;
+  const zeilen: string[] = state.post?.head ?? [];
 
   async function erzeugen() {
+    if (!foto) return;
     setLaedt(true);
+    setFehler(null);
+    setUebernommen(null);
     try {
-      const r = await api.ideas(6, filter === "alle" ? undefined : filter);
-      setIdeen(r.ideen); setEngine(r.engine);
-    } finally { setLaedt(false); }
+      const datei = foto instanceof File
+        ? foto
+        : new File([foto], "foto.jpg", { type: foto.type || "image/jpeg" });
+
+      // Die Overlay-Zeilen mitgeben, damit Bild und Text zusammenpassen.
+      const aussage = zeilen.length ? ` Das Bild trägt die Zeilen: „${zeilen.join(" ")}“.` : "";
+
+      const ergebnisse = await Promise.all(
+        TONLAGEN.map(async (t) => {
+          const antwort = await api.post(datei, state.ziel as Ziel, t.notiz + aussage);
+          return { id: t.id, label: t.label, copy: antwort.text };
+        })
+      );
+      setVorschlaege(ergebnisse);
+    } catch (e) {
+      setFehler(String(e));
+    } finally {
+      setLaedt(false);
+    }
+  }
+
+  function uebernehmen(v: Vorschlag) {
+    const alt = state.post;
+    if (!alt) return;
+    setzePost({
+      ...alt,
+      caption: v.copy.caption,
+      tags: Array.isArray(v.copy.hashtags) ? v.copy.hashtags.join(" ") : "",
+      quellen: v.copy.quellen ?? [],
+    });
+    setUebernommen(v.id);
   }
 
   return (
     <div className="card">
       <div className="rowhead">
         <div>
-          <div className="eyebrow">Anlässe aus dem Hausgedächtnis</div>
-          <h2>Post-Ideen</h2>
+          <div className="eyebrow">Aus dem, was im Studio steht</div>
+          <h2>Caption-Ideen</h2>
         </div>
         <div className="spacer" />
-        <div className="tabs">
-          {(["alle", "gast", "team"] as const).map((f) => (
-            <button key={f} data-on={filter === f} onClick={() => setFilter(f)}>
-              {f === "alle" ? "Alle" : f === "gast" ? "Gäste" : "Mitarbeitende"}
-            </button>
-          ))}
-        </div>
-        <button className="btn primary" onClick={erzeugen} disabled={laedt}>
-          {laedt ? <span className="spin" /> : <Spark />}
-          {laedt ? "denkt …" : "Ideen erzeugen"}
+        <button className="btn primary" onClick={erzeugen} disabled={laedt || !foto}>
+          {laedt && <span className="spin" />}
+          <Spark />
+          {vorschlaege.length ? "Neue Vorschläge" : "Captions vorschlagen"}
         </button>
       </div>
 
-      {ideen.length === 0 ? (
-        <div className="drop" style={{ minHeight: 220 }}>
-          <div>
-            <h2 style={{ color: "var(--ink)", marginBottom: 8 }}>Noch keine Ideen</h2>
-            <p style={{ margin: 0 }}>Jede Idee wird aus euren Belegen gebaut und zeigt,<br />
-              auf welchem sie steht. Nichts wird dazuerfunden.</p>
-          </div>
+      {!foto && (
+        <div className="card warn" style={{ marginTop: 12 }}>
+          Noch kein Foto da. Lade im Studio oder auf der Übersicht eines hoch —
+          die Captions entstehen aus dem Bild und den Zeilen darauf.
         </div>
-      ) : (
-        <>
-          <div className="ideagrid">
-            {ideen.map((i, n) => (
-              <div className={"ideacard" + (i.ziel === "team" ? " team" : "")} key={n}>
-                <div className="who">
-                  <div className="ic">{i.ziel === "team" ? <Team /> : <Haus />}</div>
-                  <div>
-                    <h3>{i.titel}</h3>
-                    <div className="eyebrow">{i.anlass}</div>
-                  </div>
-                </div>
-                <p>{i.hook}</p>
-                <div className="eyebrow" style={{ marginTop: 4 }}>Drehplan</div>
-                <ol className="quellen" style={{ margin: 0, paddingLeft: 18 }}>
-                  {i.szenen.map((s, m) => <li key={m}>{s}</li>)}
-                </ol>
-                <div className="quellen" style={{ marginTop: 6 }}>Quelle: {i.quelle}</div>
-              </div>
-            ))}
-          </div>
-          <div className="quellen" style={{ marginTop: 14 }}>Textmotor: {engine}</div>
-        </>
       )}
+
+      {foto && !vorschlaege.length && !laedt && (
+        <p className="hint" style={{ marginTop: 12 }}>
+          Es werden drei Fassungen gebaut: kurz und direkt, mit Geschichte, mit klarer
+          Aufforderung. {zeilen.length
+            ? `Die Zeilen aus dem Studio („${zeilen.join(" ")}“) fließen mit ein.`
+            : "Setz im Studio noch Overlay-Zeilen, dann passen Bild und Text besser zusammen."}
+        </p>
+      )}
+
+      {fehler && <div className="card warn" style={{ marginTop: 12 }}>{fehler}</div>}
+
+      <div className="captionliste">
+        {vorschlaege.map((v) => (
+          <div className="captioncard" key={v.id}>
+            <div className="eyebrow">{v.label}</div>
+            <p className="captiontext">{v.copy.caption}</p>
+            {v.copy.hashtags?.length > 0 && (
+              <div className="hashtags">{v.copy.hashtags.join(" ")}</div>
+            )}
+            {v.copy.quellen?.length > 0 && (
+              <div className="quellen">Grundlage: {v.copy.quellen.join(" · ")}</div>
+            )}
+            <div className="row" style={{ marginTop: 10, gap: 8 }}>
+              <button
+                className="btn primary"
+                onClick={() => uebernehmen(v)}
+                disabled={uebernommen === v.id}
+              >
+                {uebernommen === v.id ? "Übernommen" : "Für diesen Post übernehmen"}
+              </button>
+              <button
+                className="btn"
+                onClick={() => {
+                  const text = v.copy.caption + "\n\n" + (v.copy.hashtags ?? []).join(" ");
+                  navigator.clipboard?.writeText(text);
+                }}
+              >
+                Kopieren
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
