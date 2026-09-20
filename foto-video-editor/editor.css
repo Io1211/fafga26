@@ -1,0 +1,224 @@
+/**
+ * MODUL FOTO- UND VIDEO-EDITOR · Stile
+ * ====================================
+ * ALLES ist unter `.fve` gekapselt. Der Editor wird in fremde Seiten
+ * eingebaut, und dort gibt es bereits .panel, .studio, .chip, .brand,
+ * .drop und .eyebrow — ohne Kapselung überschreiben sich beide Seiten
+ * gegenseitig.
+ *
+ * Auch die Gestaltungsmerkmale hängen an `.fve` statt an `:root`. Dadurch
+ * bringt der Editor alles mit, was er braucht, und verändert nichts an der
+ * Seite, in der er sitzt.
+ *
+ * `aufbauen()` setzt die Klasse selbst auf beide Behälter — im Markup der
+ * Gastseite muss nichts vorbereitet werden.
+ */
+
+.fve {
+  --fve-paper: #f2f3ef;
+  --fve-surface: #ffffff;
+  --fve-surface-2: #eaece5;
+  --fve-line: #daded2;
+  --fve-line-strong: #c2c8b8;
+  --fve-fg: #191c19;
+  --fve-fg-muted: #5d655c;
+  --fve-fg-faint: #8b9289;
+  --fve-loden: #2f4a3a;
+  --fve-loden-lift: #3d5f4a;
+  --fve-loden-wash: #eef2ed;
+  --fve-ok: #3f6b4a;
+  --fve-warn: #9c7636;
+  --fve-bad: #a8322c;
+  --hausfarbe: #d72229;          /* wird vom Editor gesetzt, absichtlich global */
+  --fve-r: 4px;
+  --fve-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --fve-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --fve-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  font-family: var(--fve-ui);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--fve-fg);
+}
+.fve *, .fve *::before, .fve *::after { box-sizing: border-box; }
+.fve h3, .fve h4 { margin: 0; text-wrap: balance; }
+.fve p { margin: 0; }
+.fve img { max-width: 100%; }
+.fve [hidden] { display: none !important; }
+
+/* ---------------- Bausteine ---------------- */
+.fve .eyebrow { font-family: var(--fve-mono); font-size: 10px; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--fve-fg-faint); }
+.fve .hint { font-size: 12px; color: var(--fve-fg-muted); line-height: 1.5; }
+.fve label.f { display: flex; flex-direction: column; gap: 5px; }
+.fve label.f > span { font-family: var(--fve-mono); font-size: 9.5px; letter-spacing: .11em;
+  text-transform: uppercase; color: var(--fve-fg-faint); }
+.fve input[type=text], .fve textarea, .fve select {
+  background: var(--fve-surface); border: 1px solid var(--fve-line-strong);
+  border-radius: var(--fve-r); padding: 9px 11px; width: 100%; font-size: 14px;
+  color: var(--fve-fg); font-family: inherit; }
+.fve textarea { resize: vertical; line-height: 1.55; }
+.fve input:focus-visible, .fve textarea:focus-visible,
+.fve select:focus-visible, .fve button:focus-visible {
+  outline: 2px solid var(--fve-loden); outline-offset: 2px; }
+.fve .row { display: flex; gap: 10px; flex-wrap: wrap; }
+.fve .row.tight { gap: 6px; }
+.fve .grow { flex: 1; min-width: 0; }
+.fve .stack { display: flex; flex-direction: column; gap: 10px; }
+
+.fve button.btn { background: var(--fve-surface); border: 1px solid var(--fve-line-strong);
+  border-radius: var(--fve-r); padding: 9px 15px; cursor: pointer; font-size: 13px;
+  font-weight: 500; color: var(--fve-fg); font-family: inherit;
+  transition: background .13s, border-color .13s; }
+.fve button.btn:hover { background: var(--fve-surface-2); border-color: var(--fve-fg-faint); }
+.fve button.btn.primary { background: var(--fve-loden); color: #f4f6f2;
+  border-color: var(--fve-loden); font-weight: 600; }
+.fve button.btn.primary:hover { background: var(--fve-loden-lift); border-color: var(--fve-loden-lift); }
+.fve button.btn:disabled { opacity: .42; cursor: not-allowed; }
+.fve button.btn[aria-pressed="true"] { background: var(--fve-loden); color: #f4f6f2;
+  border-color: var(--fve-loden); font-weight: 600; }
+.fve button.ghost { background: none; border: 0; padding: 6px 2px; color: var(--fve-fg-muted);
+  cursor: pointer; font-size: 13px; font-family: inherit;
+  text-decoration: underline; text-underline-offset: 3px; }
+.fve button.ghost:hover { color: var(--fve-fg); }
+
+.fve .seg { display: flex; border: 1px solid var(--fve-line-strong);
+  border-radius: var(--fve-r); overflow: hidden; background: var(--fve-surface); }
+.fve .seg button { flex: 1; background: none; border: 0; padding: 9px 8px; cursor: pointer;
+  font-size: 13px; font-weight: 500; color: var(--fve-fg-muted); white-space: nowrap;
+  font-family: inherit; }
+.fve .seg button:hover { background: var(--fve-surface-2); }
+.fve .seg button[aria-pressed="true"] { background: var(--fve-loden); color: #f4f6f2; font-weight: 600; }
+
+.fve .block { display: flex; flex-direction: column; gap: 9px; }
+.fve .block > h3 { font-family: var(--fve-display); font-size: 16.5px; font-weight: 600;
+  letter-spacing: -.01em; }
+
+/* ---------------- Bühne ---------------- */
+.fve.stage, .fve .stage { display: flex; flex-direction: column; gap: 13px; align-items: center; }
+.fve .stagehead { display: flex; align-items: center; gap: 10px; width: 100%; max-width: 360px; }
+.fve .stagehead .eyebrow { margin-right: auto; }
+
+.fve .canvaswrap { background: #111; border-radius: 3px; overflow: hidden;
+  box-shadow: 0 20px 44px -26px rgba(0,0,0,.55); border: 1px solid var(--fve-line-strong);
+  max-width: 100%; }
+.fve .canvaswrap canvas { display: block; width: 340px; max-width: 100%; height: auto; }
+.fve .stagenote { font-family: var(--fve-mono); font-size: 10px; color: var(--fve-fg-faint);
+  letter-spacing: .04em; text-align: center; max-width: 340px; line-height: 1.5; }
+
+.fve .videowrap { width: 340px; max-width: 100%; }
+.fve .videowrap video { width: 100%; border-radius: 3px; background: #111; display: block;
+  border: 1px solid var(--fve-line-strong); }
+
+/* ---------------- Motive ---------------- */
+.fve .motive { display: grid; grid-template-columns: repeat(auto-fill, minmax(66px, 1fr)); gap: 7px; }
+.fve .motive button { position: relative; padding: 0; border: 1px solid var(--fve-line-strong);
+  border-radius: 3px; overflow: hidden; background: var(--fve-surface-2); cursor: pointer;
+  aspect-ratio: 4/5; }
+.fve .motive button img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.fve .motive button[aria-pressed="true"] { border-color: var(--fve-loden);
+  box-shadow: 0 0 0 2px var(--fve-loden); }
+
+.fve .drop { border: 1px dashed var(--fve-line-strong); border-radius: var(--fve-r);
+  padding: 16px; text-align: center; color: var(--fve-fg-muted); font-size: 12.5px;
+  cursor: pointer; background: var(--fve-surface); transition: border-color .13s, background .13s; }
+.fve .drop:hover, .fve .drop.over { border-color: var(--fve-loden);
+  background: var(--fve-loden-wash); color: var(--fve-fg); }
+
+/* ---------------- Farben aus dem Logo ---------------- */
+.fve .palette { display: flex; flex-wrap: wrap; gap: 6px; }
+.fve .farbtupfer { width: 34px; height: 34px; border-radius: 50%;
+  border: 2px solid var(--fve-line-strong); cursor: pointer; padding: 0;
+  transition: transform .12s, border-color .12s; }
+.fve .farbtupfer:hover { transform: scale(1.08); }
+.fve .farbtupfer[aria-pressed="true"] { border-color: var(--fve-fg);
+  box-shadow: 0 0 0 2px var(--fve-paper), 0 0 0 4px var(--fve-fg); }
+.fve .swatchbtn { position: relative; padding-left: 28px; }
+.fve .swatchbtn::before { content: ""; position: absolute; left: 9px; top: 50%;
+  transform: translateY(-50%); width: 13px; height: 13px; border-radius: 3px;
+  background: var(--s); border: 1px solid var(--fve-line-strong); }
+.fve #edRandPicker, .fve #edFarbe { width: 42px; height: 36px; padding: 0;
+  border: 1px solid var(--fve-line-strong); border-radius: var(--fve-r);
+  background: none; cursor: pointer; }
+
+/* ---------------- Vorlagen ---------------- */
+.fve .vorlagen { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 6px; }
+.fve .vorlage { background: var(--fve-surface); border: 1px solid var(--fve-line-strong);
+  border-radius: var(--fve-r); padding: 10px 8px; font-size: 12.5px; font-weight: 500;
+  cursor: pointer; color: var(--fve-fg); font-family: inherit;
+  position: relative; display: flex; align-items: center; justify-content: center; gap: 4px;
+  transition: background .13s, border-color .13s; }
+.fve .vorlage:hover { background: var(--fve-surface-2); border-color: var(--fve-fg-faint); }
+.fve .vorlage[aria-pressed="true"] { background: var(--fve-loden); color: #f4f6f2;
+  border-color: var(--fve-loden); font-weight: 600; }
+.fve .vorlage.eigen { border-style: dashed; }
+.fve .vorlage .weg { position: absolute; top: 2px; right: 5px; font-size: 13px; line-height: 1;
+  color: var(--fve-fg-faint); padding: 2px 3px; border-radius: 3px; }
+.fve .vorlage .weg:hover { color: var(--fve-bad); background: var(--fve-surface); }
+.fve .vorlage[aria-pressed="true"] .weg { color: rgba(244,246,242,.7); }
+
+/* ---------------- Feineinstellungen ---------------- */
+.fve details.fein { border: 1px solid var(--fve-line); border-radius: var(--fve-r);
+  background: var(--fve-surface); }
+.fve details.fein > summary { cursor: pointer; padding: 11px 14px; font-family: var(--fve-mono);
+  font-size: 10.5px; letter-spacing: .11em; text-transform: uppercase;
+  color: var(--fve-fg-muted); list-style: none; }
+.fve details.fein > summary::-webkit-details-marker { display: none; }
+.fve details.fein > summary::after { content: " ▾"; float: right; }
+.fve details.fein[open] > summary::after { content: " ▴"; }
+.fve details.fein > summary:hover { color: var(--fve-fg); }
+.fve .feininhalt { padding: 4px 14px 16px; display: flex; flex-direction: column; gap: 18px;
+  border-top: 1px solid var(--fve-line); }
+
+.fve label.regler { display: flex; flex-direction: column; gap: 5px; }
+.fve label.regler > span { font-family: var(--fve-mono); font-size: 9.5px; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--fve-fg-faint); display: flex; justify-content: space-between; }
+.fve label.regler b { color: var(--fve-fg); font-weight: 600; font-variant-numeric: tabular-nums; }
+.fve label.regler input[type=range] { width: 100%; accent-color: var(--fve-loden); }
+.fve label.schalter { display: flex; align-items: center; gap: 8px; font-size: 13px; cursor: pointer; }
+.fve label.schalter input { accent-color: var(--fve-loden); width: 16px; height: 16px; }
+.fve .versatz { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+/* ---------------- Logo-Position als 3×2-Gitter ---------------- */
+.fve .posgitter { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; max-width: 150px; }
+.fve .posgitter .pos { aspect-ratio: 3/2; border: 1px solid var(--fve-line-strong);
+  border-radius: 3px; background: var(--fve-surface); cursor: pointer; position: relative; padding: 0; }
+.fve .posgitter .pos::after { content: ""; position: absolute; width: 24%; height: 22%;
+  border-radius: 2px; background: var(--fve-fg-faint); }
+.fve .posgitter .pos[aria-pressed="true"] { border-color: var(--fve-loden);
+  background: var(--fve-loden-wash); }
+.fve .posgitter .pos[aria-pressed="true"]::after { background: var(--fve-loden); }
+.fve .posgitter .pos[class*="oben"]::after { top: 14%; }
+.fve .posgitter .pos[class*="unten"]::after { bottom: 14%; }
+.fve .posgitter .pos[class*="-links"]::after { left: 14%; }
+.fve .posgitter .pos[class*="-mitte"]::after { left: 50%; transform: translateX(-50%); }
+.fve .posgitter .pos[class*="-rechts"]::after { right: 14%; }
+
+/* ---------------- Textzeilen ---------------- */
+.fve .cards { display: flex; flex-wrap: wrap; gap: 6px; }
+.fve .kcard { display: flex; flex-direction: column; gap: 2px; padding: 6px 9px;
+  border: 1px solid var(--fve-line-strong); border-radius: 3px; background: var(--fve-surface);
+  cursor: pointer; min-width: 0; }
+.fve .kcard:hover { border-color: var(--fve-loden); }
+.fve .kcard .t { font-weight: 700; font-size: 11.5px; text-transform: uppercase; }
+.fve .kcard .t em { font-style: normal; color: var(--hausfarbe); }
+.fve .kcard .m { font-family: var(--fve-mono); font-size: 9px; color: var(--fve-fg-faint);
+  font-variant-numeric: tabular-nums; }
+.fve .kcard.lang { border-color: var(--fve-warn); background: #fdf8ef; }
+.fve .kcard.lang .m { color: var(--fve-warn); }
+
+/* ---------------- Platzhalter, solange nicht eingehängt ---------------- */
+.fve .editor-platzhalter, .editor-platzhalter { width: 100%; max-width: 340px; aspect-ratio: 9/16;
+  border: 1px dashed #c2c8b8; border-radius: 3px; background: #fff; display: flex;
+  flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+  text-align: center; padding: 20px; color: #5d655c; }
+
+/* ---------------- Meldung ---------------- */
+.fve-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 90;
+  background: #191c19; color: #f4f6f2; padding: 10px 17px; border-radius: 100px;
+  font-size: 13px; font-family: "Inter", sans-serif;
+  box-shadow: 0 12px 28px -12px rgba(0,0,0,.5); max-width: calc(100vw - 40px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .fve * { transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}

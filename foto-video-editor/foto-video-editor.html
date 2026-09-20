@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Foto- und Video-Editor · Werkbank</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="editor.css">
+<style>
+  /* Nur für diese Werkbank-Seite. Im Produkt liefert das Dashboard den Rahmen. */
+  body{margin:0;background:#f2f3ef;color:#191c19;
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px}
+  .wb-kopf{max-width:1140px;margin:0 auto;padding:22px 20px 0}
+  .wb-kopf h1{font-family:var(--display);font-size:24px;font-weight:800;letter-spacing:-.02em}
+  .wb-notiz{background:#fdf8ef;border:1px solid #e8d9b8;border-radius:var(--r);
+    padding:12px 14px;font-size:12.5px;line-height:1.6;margin-top:10px}
+  .wb-raum{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:28px;
+    max-width:1140px;margin:0 auto;padding:22px 20px 48px;align-items:start}
+  @media(max-width:980px){.wb-raum{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="wb-kopf">
+  <h1>Foto- und Video-Editor</h1>
+  <p class="wb-notiz"><b>Werkbank — nicht das Produkt.</b> Diese Seite lädt nur den Editor und
+  füttert ihn mit einem Beispiel-Post. So lässt sich am Interface arbeiten, ohne dass Dashboard
+  oder KI fertig sein müssen. Das Produkt ist <a href="../index.html">../index.html</a>;
+  dort liefert das Dashboard den Post und der Editor wird in <code>#editor-slot</code> eingehängt.</p>
+</div>
+
+<div class="wb-raum">
+  <!-- Die Bühne — im Produkt genau dieses Element -->
+  <section class="stage" id="mount-stage"></section>
+
+  <section class="panel">
+    <!-- Format und Motive baut der Editor selbst hier hinein -->
+    <div id="mount-bedienung"></div>
+
+    <!-- Nur Werkbank: den Post von Hand setzen, damit man alles durchspielen kann.
+         Im Produkt kommt das aus dem Dashboard bzw. vom KI-Assistenten. -->
+    <div class="block">
+      <h3>Wofür? <span class="eyebrow" style="font-weight:400">· nur Werkbank</span></h3>
+      <div class="seg" id="wbModus" role="group" aria-label="Betrieb oder Event">
+        <button data-v="betrieb">Betrieb</button>
+        <button data-v="event" aria-pressed="true">Event</button>
+      </div>
+      <button class="ghost" id="wbReset" style="font-size:12px;align-self:flex-start">
+        Alles zurücksetzen (löscht den gespeicherten Stand)</button>
+      <div class="row" id="wbEventFelder">
+        <label class="f grow"><span>Datum</span><input type="text" id="wbDatum" value="20.09.2026"></label>
+        <label class="f grow"><span>Ort im Badge</span><input type="text" id="wbOrtDetail" value="Messe Innsbruck"></label>
+      </div>
+    </div>
+
+    <div class="block">
+      <h3>Beispiel-Post <span class="eyebrow" style="font-weight:400">· nur Werkbank</span></h3>
+      <label class="f"><span>Kicker</span><input type="text" id="wbKicker" value="Buildathon · Tag 1"></label>
+      <label class="f"><span>Overlay-Zeilen · eine je Zeile, höchstens 15 Zeichen</span>
+        <textarea id="wbHead" rows="5">HEUTE WIRD
+GEBAUT.
+NICHT GEREDET.</textarea></label>
+      <label class="f"><span>Farbige Zeile</span><input type="text" id="wbKey" value="GEBAUT."></label>
+      <label class="f"><span>Aufforderung</span><input type="text" id="wbCta" value="Messe Innsbruck, bis 15 Uhr"></label>
+      <div class="row">
+        <label class="f grow"><span>Hausfarbe</span>
+          <input type="color" id="wbFarbe" value="#cdf03a" style="width:100%;height:38px;padding:0;border:1px solid var(--line-strong);border-radius:var(--r);background:none;cursor:pointer"></label>
+        <label class="f grow"><span>Betrieb</span><input type="text" id="wbHaus" value="KI-Buildathon"></label>
+      </div>
+    </div>
+
+    <div class="block">
+      <h3>Die Textzeilen</h3>
+      <div class="cards" id="wbCards"></div>
+      <p class="hint"><b>Eine Karte ist eine Zeile des Overlays.</b> Im Bild stehen alle
+      untereinander, im Video nacheinander — daher die Zeitangabe. <b>Klick färbt die Zeile</b>
+      in der Hausfarbe, nochmal klicken hebt es auf.</p>
+    </div>
+  </section>
+</div>
+
+<script type="module">
+/* Werkbank-Verkabelung. Gehört NICHT ins Produkt — dort liefert das
+   Dashboard den Post über setzePost() aus zustand.js. */
+
+import { state, setzePost, setzeHaus, setzeOption, laden, hausLaden, zuruecksetzen, kartenAus } from "./zustand.js";
+import { $ } from "./werkzeug.js";
+import * as editor from "./editor.js";
+
+// Pfade der Demo-Motive auf diese Seite umbiegen
+/* KIDU zuerst — die Werkbank startet im Event-Modus, dann muss auch das
+   erste Motiv vom Event sein. */
+state.motive = [
+  { src: "assets/kidu-halle.jpg",   label: "KIDU · Halle mit Bühne" },
+  { src: "assets/kidu-teams.jpg",   label: "KIDU · Teams bei der Arbeit" },
+  { src: "assets/motiv-event.jpg",  label: "KIDU · Handout" },
+  { src: "assets/motiv-haus.jpg",   label: "Gasthof · von außen" },
+  { src: "assets/motiv-arbeit.jpg", label: "Gasthof · bei der Arbeit" }
+];
+
+function ausFormular() {
+  const head = $("#wbHead").value.split("\n").map(z => z.trim().toUpperCase()).filter(Boolean);
+  const key = $("#wbKey").value.trim().toUpperCase();
+  setzeHaus({ name: $("#wbHaus").value, farbe: $("#wbFarbe").value });
+  document.documentElement.style.setProperty("--hausfarbe", $("#wbFarbe").value);
+  setzePost({
+    kicker: $("#wbKicker").value,
+    head: head.length ? head : ["OHNE TEXT"],
+    key,
+    caption: "", tags: "", quellen: [],
+    cards: kartenAus(head, key),
+    motor: "werkbank"
+  });
+  kartenZeigen();
+}
+
+function kartenZeigen() {
+  const wrap = $("#wbCards");
+  wrap.innerHTML = "";
+  (state.post?.cards || []).forEach(k => {
+    const d = document.createElement("div");
+    d.className = "kcard" + (k.text.length > 15 ? " lang" : "");
+    const t = document.createElement("div");
+    t.className = "t";
+    if (k.key) { const em = document.createElement("em"); em.textContent = k.text; t.append(em); }
+    else t.textContent = k.text;
+    const m = document.createElement("div");
+    m.className = "m";
+    m.textContent = `${k.dur.toFixed(2)} s · ${k.text.length} Z.`;
+    d.append(t, m);
+    d.onclick = () => {
+      const p2 = state.post;
+      const neu = (p2.key === k.text) ? "" : k.text;
+      p2.key = neu;
+      p2.cards.forEach(x => { x.key = (x.text === neu); });
+      $("#wbKey").value = neu;
+      setzePost(p2);
+      kartenZeigen();
+    };
+    wrap.append(d);
+  });
+}
+
+// Betrieb / Event umschalten — füllt das Formular mit der jeweiligen Vorgabe
+document.querySelectorAll("#wbModus button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("#wbModus button").forEach(x => x.setAttribute("aria-pressed", "false"));
+  b.setAttribute("aria-pressed", "true");
+  const istEvent = b.dataset.v === "event";
+  setzeHaus(istEvent ? VORGABE_EVENT : VORGABE_BETRIEB);
+  $("#wbEventFelder").hidden = !istEvent;
+  $("#wbHaus").value  = state.haus.name;
+  $("#wbFarbe").value = state.haus.farbe;
+  if (istEvent) {
+    $("#wbKicker").value = "Messe Innsbruck · 20. September";
+    $("#wbHead").value   = "HEUTE WIRD\nGEBAUT.\nNICHT GEREDET.";
+    $("#wbKey").value    = "GEBAUT.";
+    $("#wbCta").value    = "Messe Innsbruck, bis 15 Uhr";
+    $("#wbDatum").value  = state.haus.datum;
+    $("#wbOrtDetail").value = state.haus.ortDetail;
+    setzeHaus({ logo: "assets/kidu-logo.png" });
+    state.motiv = 0;
+  } else {
+    $("#wbKicker").value = "Navis · Berggasthof";
+    $("#wbHead").value   = "SEIT 1934\nAM SELBEN\nFLECK.";
+    $("#wbKey").value    = "SEIT 1934";
+    $("#wbCta").value    = "Tisch reservieren: 05278 / 2043";
+    setzeHaus({ logo: null, logoFarben: [] });
+    state.motiv = 3;
+  }
+  ausFormular();
+});
+["#wbDatum", "#wbOrtDetail"].forEach(s2 => $(s2).oninput = () => {
+  setzeHaus({ datum: $("#wbDatum").value, ortDetail: $("#wbOrtDetail").value });
+  ausFormular();
+});
+
+["#wbKicker", "#wbHead", "#wbKey", "#wbCta", "#wbHaus", "#wbFarbe"]
+  .forEach(s => $(s).oninput = ausFormular);
+$("#wbCta").oninput = () => {
+  setzeHaus({ ctaGast: $("#wbCta").value, ctaTeam: $("#wbCta").value });
+  ausFormular();
+};
+
+$("#wbReset").onclick = () => { zuruecksetzen(); location.reload(); };
+
+/* Zwei Vorgaben für die Werkbank. Läuft ein Backend, überschreibt
+   /api/house den Betrieb — das Event bleibt lokal, weil es dort keins gibt. */
+const VORGABE_EVENT = {
+  modus: "event", datum: "20.09.2026", ortDetail: "Messe Innsbruck",
+  name: "KI-Buildathon", ort: "Innsbruck", art: "Event",
+  farbe: "#cdf03a", logo: "assets/kidu-logo.png", logoFarben: [],
+  belege: [
+    "Ein Tag, gemischte Teams, echte KI-Prototypen für Tirols Hotellerie und Gastronomie.",
+    "Sechs Fälle aus echten Betrieben sind der Ausgangspunkt, kein Korsett.",
+    "Am Ende zählt ein Prototyp auf der Bühne, kein Konzept auf Papier."
+  ],
+  sperrliste: ["Marktführer", "weltweit einzigartig", "revolutionär"],
+  ctaGast: "Heute bis 15 Uhr, Messe Innsbruck",
+  ctaTeam: "Schau vorbei — Halle offen für alle"
+};
+const VORGABE_BETRIEB = {
+  modus: "betrieb", datum: "", ortDetail: "",
+  name: "Aurora Lodge", ort: "Salzburg", art: "Hotel & Restaurant",
+  farbe: "#0E7C66", logo: null, logoFarben: [],
+  belege: [
+    "Der Großvater hat das Haus 1934 gebaut.",
+    "Das Fleisch kommt vom Nachbarhof, 400 Meter Luftlinie.",
+    "Marlies steht seit 19 Jahren in derselben Küche."
+  ],
+  sperrliste: ["Haubenküche", "Bio-zertifiziert", "5 Sterne", "einzigartig"],
+  ctaGast: "Tisch gibt es unter der Nummer im Profil.",
+  ctaTeam: "Melde dich einfach — wir zeigen dir das Haus."
+};
+
+laden();
+setzeHaus(VORGABE_EVENT);
+state.motiv = 0;
+
+editor.aufbauen($("#mount-stage"), $("#mount-bedienung"));
+ausFormular();
+document.fonts?.ready?.then(() => editor.neuZeichnen());
+</script>
+
+<!-- Die Karten-Stile liegen im Dashboard; hier reicht das Nötigste. -->
+<style>
+  .cards{display:flex;flex-wrap:wrap;gap:6px}
+  .kcard{display:flex;flex-direction:column;gap:2px;padding:6px 9px;border:1px solid var(--line-strong);
+    border-radius:3px;background:var(--surface);cursor:pointer}
+  .kcard:hover{border-color:var(--loden)}
+  .kcard .t{font-weight:700;font-size:11.5px;text-transform:uppercase}
+  .kcard .t em{font-style:normal;color:var(--hausfarbe)}
+  .kcard .m{font-family:var(--mono);font-size:9px;color:var(--fg-faint);font-variant-numeric:tabular-nums}
+  .kcard.lang{border-color:var(--warn);background:#fdf8ef}
+</style>
+</body>
+</html>
