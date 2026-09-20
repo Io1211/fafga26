@@ -362,7 +362,14 @@ def empfehlung(house: House, prioritaet: str) -> Empfehlung:
     if prioritaet == "veranstaltung":
         termine = belegung.eigene_termine()
         events = sig["events"]
-        if termine:
+        if termine and events["kurz"]:
+            t = termine[0]
+            wann = "Heute steht" if t["datum"] == date.today().isoformat() else f"Am {_kurzdatum(t['datum'])} steht"
+            text = (f"{wann} bei euch {t['titel']} an, und in der Naehe laeuft ausserdem {events['kurz']}. "
+                    f"Kombiniert das: eigener Anlass plus Gaeste, die ohnehin wegen {events['kurz'].split(' am ')[0]} "
+                    f"unterwegs sind.")
+            quellen = [f"Eigener Termin: {t['titel']} ({t['datum']})", f"Event in der Naehe: {events['kurz']}"]
+        elif termine:
             t = termine[0]
             wann = "Heute steht" if t["datum"] == date.today().isoformat() else f"Am {_kurzdatum(t['datum'])} steht"
             text = f"{wann} bei euch {t['titel']} an. Nutzt das fuer einen Ankuendigungspost."
@@ -387,6 +394,24 @@ def empfehlung(house: House, prioritaet: str) -> Empfehlung:
             "sichtbar, ganz ohne Verkaufsdruck." + zusatz)
     quellen = [f"Wetter: {wetter['kurz']}"] if wetter["kurz"] else []
     return Empfehlung(prioritaet=prioritaet, anlass="Sichtbarkeit", text=text, quellen=quellen)
+
+
+def assistent_kontext(house: House, empf: Empfehlung) -> str:
+    """Kombinierter Kontext fuer den Foto-Prompt: Wetter-API, Event-API und der
+    eigene Terminplan des Hotels nebeneinander, nicht nur die eine Empfehlungs-
+    zeile - damit Mistral beim Schreiben dieselbe Grundlage sieht wie die
+    Empfehlung selbst."""
+    sig = signale.alle(house.ort, LAND)
+    zeilen = [f"Empfehlung: {empf.text}"]
+    if sig["wetter"]["kurz"]:
+        zeilen.append(f"Wetter (Wetter-API): {sig['wetter']['kurz']}")
+    if sig["events"]["kurz"]:
+        zeilen.append(f"Event in der Naehe (Event-API): {sig['events']['kurz']}")
+    termine = belegung.eigene_termine()
+    if termine:
+        t = termine[0]
+        zeilen.append(f"Eigener Termin (Terminplan des Hauses): {t['titel']} am {t['datum']}")
+    return "\n".join(zeilen)
 
 
 _UEBERSETZUNG_SCHEMA = {

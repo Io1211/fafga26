@@ -13,7 +13,6 @@ const AUSGABEN = [
   { id: "post", label: "Post-Idee mit Caption" },
   { id: "story", label: "Story-Variante" },
   { id: "reel", label: "Reel-Drehplan" },
-  { id: "sprachen", label: "Deutsch & Englisch" },
 ] as const;
 type Ausgabe = (typeof AUSGABEN)[number]["id"];
 
@@ -147,23 +146,6 @@ export default function Assistent() {
                 </div>
               )}
 
-              {ausgabe === "sprachen" && (
-                <div style={{ marginTop: 16, display: "grid", gap: 14 }}>
-                  <div>
-                    <div className="eyebrow" style={{ marginBottom: 8 }}>Deutsch</div>
-                    <div className="caption">{ergebnis.text.caption}</div>
-                  </div>
-                  <div>
-                    <div className="eyebrow" style={{ marginBottom: 8 }}>Englisch</div>
-                    <div className="caption">{ergebnis.caption_en}</div>
-                  </div>
-                  <button className="btn" style={{ width: "fit-content" }}
-                    onClick={() => navigator.clipboard.writeText(
-                      ergebnis.text.caption + "\n\n---\n\n" + ergebnis.caption_en)}>
-                    Beide kopieren
-                  </button>
-                </div>
-              )}
             </div>
 
             {ergebnis.warnungen.length > 0 && (
