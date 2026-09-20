@@ -51,8 +51,10 @@ function newRun(){
     }
   };
 }
+const PERSP_DEFAULT = {maria:'schnee', marco:'interview', lena:'einverstaendnis', tim:'bewerber'};
 function runScenario(id){
   const sc = SC.find(s=>s.id===id); if(!sc) return;
+  if(state.pending){ state.pending.msg.buttons=null; state.pending=null; } // laufende Rückfrage verwerfen
   state.lastSc=id; state.persp = sc.persp; state.threads[sc.persp]=[]; state.unread[sc.persp]=0; state.log=[]; state.clock=sc.clock||'08:00';
   state.subject = typeof sc.subject==='function'?sc.subject():(sc.subject||'Gastgeber-Copilot');
   document.querySelector('#pop').hidden=true;
@@ -431,7 +433,7 @@ function renderAll(){ renderSC(); renderScinfo(); renderChans(); renderPersp(); 
 document.addEventListener('click', e=>{
   const ch=e.target.closest('[data-chan]'); if(ch){ if(state.chan!==ch.dataset.chan){ state.chan=ch.dataset.chan; renderChans(); renderThread(); if(state.lastSc) logLine('🔀 Kanal gewechselt: '+(state.chan==='wa'?'WhatsApp':'E-Mail')+' – gleicher Inhalt, anderes Format'); } return; }
   const sc=e.target.closest('[data-sc]'); if(sc) return runScenario(sc.dataset.sc);
-  const pt=e.target.closest('[data-persp]'); if(pt){ state.persp=pt.dataset.persp; state.unread[state.persp]=0; document.querySelector('#pop').hidden=true; renderPersp(); return renderThread(); }
+  const pt=e.target.closest('[data-persp]'); if(pt){ const k=pt.dataset.persp; if(!state.threads[k].length){ state.unread[k]=0; const cur=SC.find(s=>s.id===state.lastSc); return runScenario(cur&&cur.persp===k?cur.id:PERSP_DEFAULT[k]); } state.persp=k; state.unread[k]=0; document.querySelector('#pop').hidden=true; renderPersp(); return renderThread(); }
   const pk=e.target.closest('[data-pick]'); if(pk){ const [id,opt]=pk.dataset.pick.split(':'); return pick(+id,opt); }
   const up=e.target.closest('[data-user]'); if(up) return runScenario(up.dataset.user);
   if(e.target.closest('#attach')) return togglePop();
