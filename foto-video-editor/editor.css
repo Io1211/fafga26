@@ -90,3 +90,14 @@ label.schalter input{accent-color:var(--loden);width:16px;height:16px}
 .posgitter .pos[class*="-links"]::after{left:14%}
 .posgitter .pos[class*="-mitte"]::after{left:50%;transform:translateX(-50%)}
 .posgitter .pos[class*="-rechts"]::after{right:14%}
+
+/* Feinversatz nebeneinander */
+.versatz{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* Eigene Vorlagen mit Löschknopf */
+.vorlage{position:relative;display:flex;align-items:center;justify-content:center;gap:4px}
+.vorlage.eigen{border-style:dashed}
+.vorlage .weg{position:absolute;top:2px;right:5px;font-size:13px;line-height:1;
+  color:var(--fg-faint);padding:2px 3px;border-radius:3px}
+.vorlage .weg:hover{color:var(--bad);background:var(--surface)}
+.vorlage[aria-pressed="true"] .weg{color:rgba(244,246,242,.7)}

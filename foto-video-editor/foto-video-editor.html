@@ -42,10 +42,12 @@
     <div class="block">
       <h3>Wofür? <span class="eyebrow" style="font-weight:400">· nur Werkbank</span></h3>
       <div class="seg" id="wbModus" role="group" aria-label="Betrieb oder Event">
-        <button data-v="betrieb" aria-pressed="true">Betrieb</button>
-        <button data-v="event">Event</button>
+        <button data-v="betrieb">Betrieb</button>
+        <button data-v="event" aria-pressed="true">Event</button>
       </div>
-      <div class="row" id="wbEventFelder" hidden>
+      <button class="ghost" id="wbReset" style="font-size:12px;align-self:flex-start">
+        Alles zurücksetzen (löscht den gespeicherten Stand)</button>
+      <div class="row" id="wbEventFelder">
         <label class="f grow"><span>Datum</span><input type="text" id="wbDatum" value="20.09.2026"></label>
         <label class="f grow"><span>Ort im Badge</span><input type="text" id="wbOrtDetail" value="Messe Innsbruck"></label>
       </div>
@@ -53,17 +55,17 @@
 
     <div class="block">
       <h3>Beispiel-Post <span class="eyebrow" style="font-weight:400">· nur Werkbank</span></h3>
-      <label class="f"><span>Kicker</span><input type="text" id="wbKicker" value="Navis · Berggasthof"></label>
+      <label class="f"><span>Kicker</span><input type="text" id="wbKicker" value="Buildathon · Tag 1"></label>
       <label class="f"><span>Overlay-Zeilen · eine je Zeile, höchstens 15 Zeichen</span>
-        <textarea id="wbHead" rows="5">SEIT 1934
-AM SELBEN
-FLECK.</textarea></label>
-      <label class="f"><span>Farbige Zeile</span><input type="text" id="wbKey" value="SEIT 1934"></label>
-      <label class="f"><span>Aufforderung</span><input type="text" id="wbCta" value="Tisch reservieren: 05278 / 2043"></label>
+        <textarea id="wbHead" rows="5">HEUTE WIRD
+GEBAUT.
+NICHT GEREDET.</textarea></label>
+      <label class="f"><span>Farbige Zeile</span><input type="text" id="wbKey" value="GEBAUT."></label>
+      <label class="f"><span>Aufforderung</span><input type="text" id="wbCta" value="Messe Innsbruck, bis 15 Uhr"></label>
       <div class="row">
         <label class="f grow"><span>Hausfarbe</span>
-          <input type="color" id="wbFarbe" value="#d72229" style="width:100%;height:38px;padding:0;border:1px solid var(--line-strong);border-radius:var(--r);background:none;cursor:pointer"></label>
-        <label class="f grow"><span>Betrieb</span><input type="text" id="wbHaus" value="Berggasthof Wildeben"></label>
+          <input type="color" id="wbFarbe" value="#cdf03a" style="width:100%;height:38px;padding:0;border:1px solid var(--line-strong);border-radius:var(--r);background:none;cursor:pointer"></label>
+        <label class="f grow"><span>Betrieb</span><input type="text" id="wbHaus" value="KI-Buildathon"></label>
       </div>
     </div>
 
@@ -86,12 +88,14 @@ import { $, clamp } from "../src/core/dom.js";
 import * as editor from "./editor.js";
 
 // Pfade der Demo-Motive auf diese Seite umbiegen
+/* KIDU zuerst — die Werkbank startet im Event-Modus, dann muss auch das
+   erste Motiv vom Event sein. */
 state.motive = [
-  { src: "../assets/motiv-haus.jpg",   label: "Das Haus von außen" },
-  { src: "../assets/motiv-arbeit.jpg", label: "Bei der Arbeit" },
   { src: "../assets/kidu-halle.jpg",   label: "KIDU · Halle mit Bühne" },
   { src: "../assets/kidu-teams.jpg",   label: "KIDU · Teams bei der Arbeit" },
-  { src: "../assets/motiv-event.jpg",  label: "KIDU · Handout" }
+  { src: "../assets/motiv-event.jpg",  label: "KIDU · Handout" },
+  { src: "../assets/motiv-haus.jpg",   label: "Gasthof · von außen" },
+  { src: "../assets/motiv-arbeit.jpg", label: "Gasthof · bei der Arbeit" }
 ];
 
 function kartenAus(zeilen, key) {
@@ -163,14 +167,14 @@ document.querySelectorAll("#wbModus button").forEach(b => b.onclick = () => {
     $("#wbDatum").value  = state.haus.datum;
     $("#wbOrtDetail").value = state.haus.ortDetail;
     setzeHaus({ logo: "../assets/kidu-logo.png" });
-    state.motiv = 2;
+    state.motiv = 0;
   } else {
     $("#wbKicker").value = "Navis · Berggasthof";
     $("#wbHead").value   = "SEIT 1934\nAM SELBEN\nFLECK.";
     $("#wbKey").value    = "SEIT 1934";
     $("#wbCta").value    = "Tisch reservieren: 05278 / 2043";
-    setzeHaus({ logo: null });
-    state.motiv = 0;
+    setzeHaus({ logo: null, logoFarben: [] });
+    state.motiv = 3;
   }
   ausFormular();
 });
@@ -185,6 +189,20 @@ $("#wbCta").oninput = () => {
   setzeHaus({ ctaGast: $("#wbCta").value, ctaTeam: $("#wbCta").value });
   ausFormular();
 };
+
+$("#wbReset").onclick = () => {
+  try {
+    localStorage.removeItem("hauspost.v3");
+    localStorage.removeItem("hauspost.vorlagen.v1");
+  } catch (e) { /* egal */ }
+  location.reload();
+};
+
+/* Die Werkbank startet IMMER beim Event. Sonst steht hier der zuletzt
+   gespeicherte Betrieb, und man wundert sich über fremde Texte. */
+ladeVorgabe("event");
+setzeHaus({ logo: "../assets/kidu-logo.png" });
+state.motiv = 0;
 
 editor.aufbauen($("#mount-stage"), $("#mount-bedienung"));
 ausFormular();

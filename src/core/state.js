@@ -48,6 +48,7 @@ export const VORGABE_HAUS = {
   art: "Berggasthof",
   farbe: "#d72229",
   logo: null,
+  logoFarben: [],            // aus dem Logo gezogen, siehe foto-video-editor/farben.js
   belege: [
     "Der Großvater hat das Haus 1934 gebaut, wir führen es in dritter Generation.",
     "Das Fleisch kommt vom Nachbarhof, 400 Meter Luftlinie.",
@@ -73,6 +74,7 @@ export const VORGABE_EVENT = {
   art: "Event",
   farbe: "#cdf03a",          // KIDU-Markenfarbe, aus dem Logo der Website
   logo: "assets/kidu-logo.png",
+  logoFarben: ["#cdf03a", "#0e0e0c"],
   belege: [
     "Ein Tag, gemischte Teams, echte KI-Prototypen für Tirols Hotellerie und Gastronomie.",
     "Sechs Fälle aus echten Betrieben sind der Ausgangspunkt, kein Korsett.",
@@ -107,11 +109,11 @@ export const state = {
 
   /** MODUL 2 — Welches Foto gerade bearbeitet wird. */
   motive: [
-    { src: "assets/motiv-haus.jpg", label: "Das Haus von außen" },
-    { src: "assets/motiv-arbeit.jpg", label: "Bei der Arbeit" },
     { src: "assets/kidu-halle.jpg",  label: "KIDU · Halle mit Bühne" },
     { src: "assets/kidu-teams.jpg",  label: "KIDU · Teams bei der Arbeit" },
-    { src: "assets/motiv-event.jpg", label: "KIDU · Handout" }
+    { src: "assets/motiv-event.jpg", label: "KIDU · Handout" },
+    { src: "assets/motiv-haus.jpg",  label: "Gasthof · von außen" },
+    { src: "assets/motiv-arbeit.jpg", label: "Gasthof · bei der Arbeit" }
   ],
   motiv: 0,
 
@@ -128,7 +130,10 @@ export const state = {
   stil: {
     schrift: "grotesk", groesse: 1, ausricht: "links", textPos: "unten",
     textRand: "kontur", logoAn: true, logoGroesse: 1, logoPos: "oben-links",
-    unschaerfe: 26, abdunkeln: 1
+    unschaerfe: 26, abdunkeln: 1,
+    zeilenabstand: 1,        // Vielfaches der Schrift-Zeilenhöhe
+    textX: 0, textY: 0,      // Feinversatz in Prozent der Bildbreite/-höhe
+    logoX: 0, logoY: 0
   },
   randfarbe: "#ffffff",  // nur bei passung === "rand"
   raster: false,      // Hilfslinien im Editor

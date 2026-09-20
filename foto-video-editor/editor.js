@@ -12,7 +12,8 @@
 import { state, setzeMotiv, motivHinzu, setzeOption, setzeHaus, setzeStil, on } from "../src/core/state.js";
 import { $, $$, toast, slug, bildHolen } from "../src/core/dom.js";
 import { farbenAus, gutAufDunkel } from "./farben.js";
-import { zeichnePost, alsPng, VORLAGEN, SCHRIFTEN, TEXTRAENDER, LOGOPOSITIONEN } from "./image.js";
+import * as eigeneVorlagen from "./vorlagen.js";
+import { zeichnePost, alsPng, VORLAGEN, SCHRIFTEN, TEXTRAENDER, LOGOPOSITIONEN, STANDARDSTIL } from "./image.js";
 import { baueVideo } from "./video.js";
 
 let stageCanvas = null;
@@ -55,6 +56,9 @@ export function bedienungMarkup() {
     <h3>Vorlage</h3>
     <div class="vorlagen" id="edVorlagen"></div>
     <p class="hint" id="edVorlageHint"></p>
+    <div class="row tight">
+      <button class="btn" id="edVorlageSichern">Aktuellen Stil als Vorlage sichern</button>
+    </div>
   </div>
 
   <div class="block">
@@ -99,6 +103,8 @@ export function bedienungMarkup() {
           <button data-v="mitte">Mitte</button>
           <button data-v="rechts">Rechts</button>
         </div>
+        <label class="regler"><span>Zeilenabstand <b id="edZeileWert">100 %</b></span>
+          <input type="range" id="edZeile" min="70" max="180" step="2"></label>
       </div>
 
       <div class="block">
@@ -114,9 +120,14 @@ export function bedienungMarkup() {
           <button data-v="mitte">Mitte</button>
           <button data-v="unten">Unten</button>
         </div>
-        <p class="hint">„Unten“ ist die Vorgabe: die Grundlinie liegt bei 0,72 statt ganz unten,
-        weil darunter die Aufforderung Platz braucht und Instagram in der Story eigene
-        Bedienelemente einblendet.</p>
+        <p class="hint">Grob die Höhe wählen, dann mit dem Feinversatz genau setzen.</p>
+        <div class="versatz">
+          <label class="regler"><span>Waagrecht <b id="edTextXWert">0 %</b></span>
+            <input type="range" id="edTextX" min="-25" max="25" step="0.5"></label>
+          <label class="regler"><span>Senkrecht <b id="edTextYWert">0 %</b></span>
+            <input type="range" id="edTextY" min="-30" max="20" step="0.5"></label>
+        </div>
+        <button class="ghost" id="edTextNull" style="font-size:12px;align-self:flex-start">Versatz zurücksetzen</button>
       </div>
 
       <div class="block">
@@ -125,6 +136,13 @@ export function bedienungMarkup() {
         <div class="posgitter" id="edLogoPos"></div>
         <label class="regler"><span>Logogröße <b id="edLogoGrWert">100 %</b></span>
           <input type="range" id="edLogoGr" min="40" max="160" step="5"></label>
+        <div class="versatz">
+          <label class="regler"><span>Waagrecht <b id="edLogoXWert">0 %</b></span>
+            <input type="range" id="edLogoX" min="-25" max="25" step="0.5"></label>
+          <label class="regler"><span>Senkrecht <b id="edLogoYWert">0 %</b></span>
+            <input type="range" id="edLogoY" min="-25" max="25" step="0.5"></label>
+        </div>
+        <button class="ghost" id="edLogoNull" style="font-size:12px;align-self:flex-start">Versatz zurücksetzen</button>
       </div>
 
       <div class="block">
@@ -272,24 +290,64 @@ export function aufbauen(buehne, bedienung) {
 
   /* ================= Vorlagen (K5, K9) ================= */
   const vw = $("#edVorlagen");
-  Object.entries(VORLAGEN).forEach(([id, v]) => {
-    const b = document.createElement("button");
-    b.className = "vorlage";
-    b.dataset.v = id;
-    b.textContent = v.name;
-    b.onclick = () => {
-      setzeOption({ vorlage: id });
-      setzeStil({ ...v.stil });
-      vorlagenZeigen();
-      reglerZeigen();
-    };
-    vw.append(b);
-  });
+
+  function alleVorlagen() {
+    return { ...VORLAGEN, ...eigeneVorlagen.eigene() };
+  }
+
+  function vorlagenBauen() {
+    vw.innerHTML = "";
+    Object.entries(alleVorlagen()).forEach(([id, v]) => {
+      const eigen = id.startsWith("eigen-");
+      const b = document.createElement("button");
+      b.className = "vorlage" + (eigen ? " eigen" : "");
+      b.dataset.v = id;
+      const t = document.createElement("span");
+      t.textContent = v.name;
+      b.append(t);
+      b.onclick = () => {
+        setzeOption({ vorlage: id });
+        setzeStil({ ...STANDARDSTIL, ...v.stil });
+        vorlagenZeigen();
+        reglerZeigen();
+      };
+      if (eigen) {
+        const x = document.createElement("span");
+        x.className = "weg";
+        x.textContent = "×";
+        x.title = "Vorlage löschen";
+        x.onclick = ev => {
+          ev.stopPropagation();
+          eigeneVorlagen.loeschen(id);
+          if (state.vorlage === id) setzeOption({ vorlage: "klassisch" });
+          vorlagenBauen();
+          vorlagenZeigen();
+          toast("Vorlage gelöscht.");
+        };
+        b.append(x);
+      }
+      vw.append(b);
+    });
+  }
+
   function vorlagenZeigen() {
     $$("#edVorlagen .vorlage").forEach(b =>
       b.setAttribute("aria-pressed", String(b.dataset.v === state.vorlage)));
-    $("#edVorlageHint").textContent = VORLAGEN[state.vorlage]?.hinweis || "";
+    $("#edVorlageHint").textContent =
+      alleVorlagen()[state.vorlage]?.hinweis || "Eigene Vorlage. Das × löscht sie.";
   }
+
+  $("#edVorlageSichern").onclick = () => {
+    const name = prompt("Name der Vorlage:", "Mein Stil");
+    if (!name || !name.trim()) return;
+    const id = eigeneVorlagen.sichern(name, state.stil);
+    setzeOption({ vorlage: id });
+    vorlagenBauen();
+    vorlagenZeigen();
+    toast(`„${name.trim()}“ gesichert.`);
+  };
+
+  vorlagenBauen();
 
   /* ================= Schrift ================= */
   const sw = $("#edSegSchrift");
@@ -351,6 +409,23 @@ export function aufbauen(buehne, bedienung) {
     setzeStil({ unschaerfe: Number(e.target.value) });
     $("#edBlurWert").textContent = e.target.value;
   };
+  $("#edZeile").oninput = e => {
+    setzeStil({ zeilenabstand: e.target.value / 100 });
+    $("#edZeileWert").textContent = e.target.value + " %";
+  };
+  const versatzRegler = (sel, feld) => {
+    $(sel).oninput = e => {
+      setzeStil({ [feld]: Number(e.target.value) });
+      $(sel + "Wert").textContent = e.target.value + " %";
+    };
+  };
+  versatzRegler("#edTextX", "textX");
+  versatzRegler("#edTextY", "textY");
+  versatzRegler("#edLogoX", "logoX");
+  versatzRegler("#edLogoY", "logoY");
+  $("#edTextNull").onclick = () => { setzeStil({ textX: 0, textY: 0 }); reglerZeigen(); };
+  $("#edLogoNull").onclick = () => { setzeStil({ logoX: 0, logoY: 0 }); reglerZeigen(); };
+
   $("#edDunkel").oninput = e => {
     setzeStil({ abdunkeln: e.target.value / 100 });
     $("#edDunkelWert").textContent = e.target.value + " %";
@@ -376,6 +451,13 @@ export function aufbauen(buehne, bedienung) {
     $("#edBlurWert").textContent = st.unschaerfe;
     $("#edDunkel").value = Math.round(st.abdunkeln * 100);
     $("#edDunkelWert").textContent = Math.round(st.abdunkeln * 100) + " %";
+    $("#edZeile").value = Math.round((st.zeilenabstand ?? 1) * 100);
+    $("#edZeileWert").textContent = Math.round((st.zeilenabstand ?? 1) * 100) + " %";
+    [["#edTextX", "textX"], ["#edTextY", "textY"],
+     ["#edLogoX", "logoX"], ["#edLogoY", "logoY"]].forEach(([sel, feld]) => {
+      $(sel).value = st[feld] ?? 0;
+      $(sel + "Wert").textContent = (st[feld] ?? 0) + " %";
+    });
     $("#edRandHint").textContent = randHint[st.textRand] || "";
   }
 
@@ -410,50 +492,64 @@ export function aufbauen(buehne, bedienung) {
   };
   $("#edLogoBtn").onclick = () => $("#edLogoFile").click();
   $("#edLogoWeg").onclick = () => {
-    setzeHaus({ logo: null });
-    $("#edLogoWeg").hidden = true;
-    $("#edPalette").hidden = true;
-    $("#edFarbeHint").textContent = "Logo entfernt. Ohne Logo wird der Name als Wortmarke gesetzt.";
+    setzeHaus({ logo: null, logoFarben: [] });
+    paletteZeigen();
   };
   $("#edLogoFile").onchange = async e => {
     const f = e.target.files?.[0];
     if (!f) return;
-    const url = URL.createObjectURL(f);
-    setzeHaus({ logo: url });
-    $("#edLogoWeg").hidden = false;
+    await paletteAusLogo(URL.createObjectURL(f), true);
+  };
 
-    // Farben aus dem Logo ziehen und zur Auswahl anbieten
+  /**
+   * Farben aus dem Logo ziehen und DAUERHAFT als Auswahl anbieten (K5).
+   * Sie liegen in state.haus.logoFarben, damit sie auch nach einem Wechsel
+   * der Vorlage oder beim Laden eines anderen Betriebs noch da sind — vorher
+   * waren sie nur direkt nach dem Hochladen sichtbar.
+   */
+  async function paletteAusLogo(url, uebernehmen = false) {
     const im = await bildHolen(url);
-    const farben = im ? farbenAus(im, 6) : [];
-    const brauchbar = farben.filter(gutAufDunkel);
+    const brauchbar = im ? farbenAus(im, 6).filter(gutAufDunkel) : [];
+    setzeHaus({ logo: url, logoFarben: brauchbar });
+    if (uebernehmen && brauchbar.length) {
+      setzeHaus({ farbe: brauchbar[0] });
+      document.documentElement.style.setProperty("--hausfarbe", brauchbar[0]);
+    }
+    paletteZeigen();
+  }
+
+  function paletteZeigen() {
     const palette = $("#edPalette");
+    const farben = state.haus.logoFarben || [];
+    $("#edLogoWeg").hidden = !state.haus.logo;
+    $("#edFarbe").value = state.haus.farbe;
     palette.innerHTML = "";
-    if (!brauchbar.length) {
+    if (!farben.length) {
       palette.hidden = true;
-      $("#edFarbeHint").textContent =
-        "Im Logo war keine kräftige Farbe zu finden — Hausfarbe bitte selbst wählen.";
+      $("#edFarbeHint").textContent = state.haus.logo
+        ? "Im Logo war keine kräftige Farbe zu finden — Hausfarbe bitte selbst wählen."
+        : "Beim Hochladen eines Logos werden dessen Farben vorgeschlagen.";
       return;
     }
-    brauchbar.forEach((hexf, i) => {
+    farben.forEach(hexf => {
       const b = document.createElement("button");
       b.className = "farbtupfer";
       b.style.background = hexf;
       b.title = hexf;
       b.setAttribute("aria-label", "Hausfarbe " + hexf);
+      b.setAttribute("aria-pressed",
+        String(hexf.toLowerCase() === String(state.haus.farbe).toLowerCase()));
       b.onclick = () => {
         setzeHaus({ farbe: hexf });
-        $("#edFarbe").value = hexf;
         document.documentElement.style.setProperty("--hausfarbe", hexf);
-        $$("#edPalette .farbtupfer").forEach(x => x.setAttribute("aria-pressed", "false"));
-        b.setAttribute("aria-pressed", "true");
+        paletteZeigen();
       };
       palette.append(b);
-      if (i === 0) b.click();     // kräftigste Farbe direkt übernehmen
     });
     palette.hidden = false;
     $("#edFarbeHint").textContent =
-      `${brauchbar.length} Farben aus dem Logo. Die kräftigste ist übernommen — anklicken zum Wechseln.`;
-  };
+      `${farben.length} Farben aus dem Logo. Anklicken übernimmt sie als Hausfarbe.`;
+  }
 
   $$("#edSegFormat button").forEach(b => b.onclick = () => {
     $$("#edSegFormat button").forEach(x => x.setAttribute("aria-pressed", "false"));
@@ -499,6 +595,9 @@ export function aufbauen(buehne, bedienung) {
   vorlagenZeigen();
   reglerZeigen();
   passungZeigen();
+  // Trägt der Betrieb bereits ein Logo, dessen Farben aber noch nicht, nachziehen
+  if (state.haus.logo && !(state.haus.logoFarben || []).length) paletteAusLogo(state.haus.logo);
+  else paletteZeigen();
   $$("#edSegFormat button").forEach(b =>
     b.setAttribute("aria-pressed", String(b.dataset.v === state.format)));
 

@@ -103,7 +103,10 @@ export const VORLAGEN = {
   }
 };
 
-export const STANDARDSTIL = { ...VORLAGEN.klassisch.stil };
+export const STANDARDSTIL = {
+  ...VORLAGEN.klassisch.stil,
+  zeilenabstand: 1, textX: 0, textY: 0, logoX: 0, logoY: 0
+};
 
 /* ------------------------------------------------------------------ *
  *  Hilfen
@@ -312,8 +315,10 @@ export async function zeichnePost(canvas, opts = {}) {
         // sobald das Logo quadratisch ist — dann wird es turmhoch (K8).
         const f = Math.min((W * 0.26 * gr) / lg.width, (W * 0.105 * gr) / lg.height);
         const lw = lg.width * f, lh = lg.height * f;
-        const lx = pos.x === "mitte" ? (W - lw) / 2 : pos.x === "rechts" ? W - pad - lw : pad;
-        const ly = pos.y === "unten" ? feldY + feldH - pad - lh : feldY + pad;
+        const lx = (pos.x === "mitte" ? (W - lw) / 2 : pos.x === "rechts" ? W - pad - lw : pad)
+                 + W * (s.logoX ?? 0) / 100;
+        const ly = (pos.y === "unten" ? feldY + feldH - pad - lh : feldY + pad)
+                 + H * (s.logoY ?? 0) / 100;
         c.drawImage(lg, lx, ly, lw, lh);
         logoKasten = { x: lx, y: ly, w: lw, h: lh, mitte: pos.x === "mitte" };
       }
@@ -324,8 +329,10 @@ export async function zeichnePost(canvas, opts = {}) {
       c.font = `600 ${ws}px Inter, sans-serif`;
       c.textBaseline = "top";
       const tb = c.measureText(haus.name.toUpperCase()).width;
-      const lx = pos.x === "mitte" ? (W - tb) / 2 : pos.x === "rechts" ? W - pad - tb : pad;
-      const ly = pos.y === "unten" ? feldY + feldH - pad - ws * 2.2 : feldY + pad;
+      const lx = (pos.x === "mitte" ? (W - tb) / 2 : pos.x === "rechts" ? W - pad - tb : pad)
+               + W * (s.logoX ?? 0) / 100;
+      const ly = (pos.y === "unten" ? feldY + feldH - pad - ws * 2.2 : feldY + pad)
+               + H * (s.logoY ?? 0) / 100;
       c.textAlign = "left";
       c.fillStyle = "rgba(255,255,255,.94)";
       c.fillText(haus.name.toUpperCase(), lx, ly);
@@ -357,14 +364,16 @@ export async function zeichnePost(canvas, opts = {}) {
   }
 
   /* ---- Schlagzeile (K4, K7, K8) ---- */
-  const grundY = H * (TEXTHOEHEN[s.textPos] ?? TEXTHOEHEN.unten);
+  const grundY = H * (TEXTHOEHEN[s.textPos] ?? TEXTHOEHEN.unten) + H * (s.textY ?? 0) / 100;
   const zeilen = nurKarte !== undefined ? [post.head[nurKarte]] : post.head;
   const basis = W * schrift.groesse * (s.groesse ?? 1);
   const gross = passendeGroesse(c, zeilen, W - pad * 2, basis, schrift);
-  const zh = gross * schrift.hoehe;
+  const zh = gross * schrift.hoehe * (s.zeilenabstand ?? 1);
   const start = grundY - (zeilen.length - 1) * zh;
   const keyTeile = String(post.key || "").split(/\s+/).filter(Boolean);
-  const { x: ax, align } = anker(s.ausricht, W, pad);
+  const roh = anker(s.ausricht, W, pad);
+  const ax = roh.x + W * (s.textX ?? 0) / 100;
+  const align = roh.align;
 
   c.textBaseline = "alphabetic";
   c.textAlign = align;
