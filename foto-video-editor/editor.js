@@ -51,6 +51,18 @@ export function bedienungMarkup() {
     </div>
   </div>
   <div class="block">
+    <h3>Textblock</h3>
+    <div class="seg" id="edSegLayout" role="group" aria-label="Wo der Text sitzt">
+      <button data-v="oben">Oben</button>
+      <button data-v="mitte">Mitte</button>
+      <button data-v="unten" aria-pressed="true">Unten</button>
+    </div>
+    <p class="hint">„Unten“ ist die Vorgabe: die Grundlinie liegt bei 0,72 statt ganz unten,
+    weil darunter die Aufforderung Platz braucht und Instagram in der Story eigene
+    Bedienelemente einblendet.</p>
+  </div>
+
+  <div class="block">
     <h3>Motiv</h3>
     <div class="motive" id="edMotive"></div>
     <div class="drop" id="edDrop">Eigene Fotos hierher ziehen oder klicken</div>
@@ -148,6 +160,12 @@ export function aufbauen(buehne, bedienung) {
     $("#edRaster").setAttribute("aria-pressed", String(state.raster));
   };
 
+  $$("#edSegLayout button").forEach(b => b.onclick = () => {
+    $$("#edSegLayout button").forEach(x => x.setAttribute("aria-pressed", "false"));
+    b.setAttribute("aria-pressed", "true");
+    setzeOption({ layout: b.dataset.v });
+  });
+
   $$("#edSegFormat button").forEach(b => b.onclick = () => {
     $$("#edSegFormat button").forEach(x => x.setAttribute("aria-pressed", "false"));
     b.setAttribute("aria-pressed", "true");
@@ -176,6 +194,12 @@ export function aufbauen(buehne, bedienung) {
   on("post",  neuZeichnen);
   on("haus",  neuZeichnen);
   on("motiv", () => { motiveRendern(); neuZeichnen(); });
+
+  // Segmente auf den gespeicherten Zustand setzen
+  $$("#edSegLayout button").forEach(b =>
+    b.setAttribute("aria-pressed", String(b.dataset.v === state.layout)));
+  $$("#edSegFormat button").forEach(b =>
+    b.setAttribute("aria-pressed", String(b.dataset.v === state.format)));
 
   motiveRendern();
   neuZeichnen();

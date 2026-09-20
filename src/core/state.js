@@ -34,7 +34,15 @@ export function melden(thema) {
  *  Vorgabe — der Demo-Betrieb aus Case Study 06
  * ------------------------------------------------------------------ */
 
+/**
+ * Zwei Betriebsarten: ein Haus, das dauerhaft existiert — oder ein Event,
+ * das an einem Datum stattfindet. Der Unterschied steckt in `modus`,
+ * `datum` und `ortDetail`; alles andere ist identisch.
+ */
 export const VORGABE_HAUS = {
+  modus: "betrieb",           // "betrieb" | "event"
+  datum: "",                  // nur bei Events, z. B. "20.09.2026"
+  ortDetail: "",              // nur bei Events, z. B. "Messe Innsbruck"
   name: "Berggasthof Wildeben",
   ort: "Navis",
   art: "Berggasthof",
@@ -50,6 +58,31 @@ export const VORGABE_HAUS = {
   sperr: ["Haubenküche", "Bio-zertifiziert", "Fünf Sterne", "Wellnesstempel"],
   ctaGast: "Tisch reservieren: 05278 / 2043",
   ctaTeam: "Komm einen Tag mit — eine Nachricht genügt"
+};
+
+/**
+ * Ein Event statt eines Betriebs. Die Belege sind hier Programmpunkte und
+ * harte Fakten — dasselbe Prinzip: es wird nur behauptet, was hier steht.
+ */
+export const VORGABE_EVENT = {
+  modus: "event",
+  datum: "20.09.2026",
+  ortDetail: "Messe Innsbruck",
+  name: "KI-Buildathon",
+  ort: "Innsbruck",
+  art: "Event",
+  farbe: "#d7263d",
+  logo: null,
+  belege: [
+    "Ein Tag, gemischte Teams, echte KI-Prototypen für Tirols Hotellerie und Gastronomie.",
+    "Sechs Fälle aus echten Betrieben sind der Ausgangspunkt, kein Korsett.",
+    "Vom erfahrenen Entwickler bis zu Leuten, die zum ersten Mal etwas bauen.",
+    "Am Ende zählt ein Prototyp auf der Bühne, kein Konzept auf Papier.",
+    "Ein Format von KIDU und Messe Innsbruck, in Kooperation mit der WKO Tirol."
+  ],
+  sperr: ["Marktführer", "weltweit einzigartig", "revolutionär"],
+  ctaGast: "Heute bis 15 Uhr, Messe Innsbruck",
+  ctaTeam: "Schau vorbei — Halle offen für alle"
 };
 
 /* ------------------------------------------------------------------ *
@@ -75,7 +108,8 @@ export const state = {
   /** MODUL 2 — Welches Foto gerade bearbeitet wird. */
   motive: [
     { src: "assets/motiv-haus.jpg", label: "Das Haus von außen" },
-    { src: "assets/motiv-arbeit.jpg", label: "Bei der Arbeit" }
+    { src: "assets/motiv-arbeit.jpg", label: "Bei der Arbeit" },
+    { src: "assets/motiv-event.jpg", label: "Vom Event" }
   ],
   motiv: 0,
 
@@ -85,6 +119,7 @@ export const state = {
   /** Gemeinsame Einstellungen des aktuellen Posts. */
   ziel: "gast",       // "gast" | "team"
   format: "story",    // "story" (1080×1920) | "post" (1080×1350)
+  layout: "unten",    // "unten" | "mitte" | "oben" — wo der Textblock sitzt
   raster: false,      // Hilfslinien im Editor
   ansicht: "onboarding", // "onboarding" | "studio"
   eingerichtet: false
@@ -128,6 +163,14 @@ export function setzeOption(teil) {
   melden("post");
 }
 
+/** Zwischen einem Betrieb und einem Event umschalten (lädt eine Vorgabe). */
+export function ladeVorgabe(welche) {
+  const v = welche === "event" ? VORGABE_EVENT : VORGABE_HAUS;
+  Object.assign(state.haus, v, { belege: [...v.belege], sperr: [...v.sperr] });
+  sichern();
+  melden("haus");
+}
+
 export function setzeAnsicht(a) {
   state.ansicht = a;
   if (a === "studio") { state.eingerichtet = true; sichern(); }
@@ -146,6 +189,7 @@ export function sichern() {
       haus: { ...state.haus, logo: null },  // Objekt-URLs überleben den Neustart nicht
       ziel: state.ziel,
       format: state.format,
+      layout: state.layout,
       eingerichtet: state.eingerichtet
     }));
   } catch (e) { /* privates Fenster, gesperrter Speicher — egal */ }
@@ -159,6 +203,7 @@ export function laden() {
     if (d.haus) Object.assign(state.haus, d.haus);
     if (d.ziel) state.ziel = d.ziel;
     if (d.format) state.format = d.format;
+    if (d.layout) state.layout = d.layout;
     state.eingerichtet = !!d.eingerichtet;
     state.ansicht = state.eingerichtet ? "studio" : "onboarding";
   } catch (e) { /* kaputter Eintrag — mit der Vorgabe weitermachen */ }

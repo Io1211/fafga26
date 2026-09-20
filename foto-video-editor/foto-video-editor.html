@@ -40,6 +40,18 @@
     <!-- Nur Werkbank: den Post von Hand setzen, damit man alles durchspielen kann.
          Im Produkt kommt das aus dem Dashboard bzw. vom KI-Assistenten. -->
     <div class="block">
+      <h3>Wofür? <span class="eyebrow" style="font-weight:400">· nur Werkbank</span></h3>
+      <div class="seg" id="wbModus" role="group" aria-label="Betrieb oder Event">
+        <button data-v="betrieb" aria-pressed="true">Betrieb</button>
+        <button data-v="event">Event</button>
+      </div>
+      <div class="row" id="wbEventFelder" hidden>
+        <label class="f grow"><span>Datum</span><input type="text" id="wbDatum" value="20.09.2026"></label>
+        <label class="f grow"><span>Ort im Badge</span><input type="text" id="wbOrtDetail" value="Messe Innsbruck"></label>
+      </div>
+    </div>
+
+    <div class="block">
       <h3>Beispiel-Post <span class="eyebrow" style="font-weight:400">· nur Werkbank</span></h3>
       <label class="f"><span>Kicker</span><input type="text" id="wbKicker" value="Navis · Berggasthof"></label>
       <label class="f"><span>Overlay-Zeilen · eine je Zeile, höchstens 15 Zeichen</span>
@@ -68,14 +80,15 @@ FLECK.</textarea></label>
 /* Werkbank-Verkabelung. Gehört NICHT ins Produkt — dort liefert das
    Dashboard den Post über setzePost() aus src/core/state.js. */
 
-import { state, setzePost, setzeHaus } from "../src/core/state.js";
+import { state, setzePost, setzeHaus, ladeVorgabe, VORGABE_EVENT, VORGABE_HAUS } from "../src/core/state.js";
 import { $, clamp } from "../src/core/dom.js";
 import * as editor from "./editor.js";
 
 // Pfade der Demo-Motive auf diese Seite umbiegen
 state.motive = [
   { src: "../assets/motiv-haus.jpg",   label: "Das Haus von außen" },
-  { src: "../assets/motiv-arbeit.jpg", label: "Bei der Arbeit" }
+  { src: "../assets/motiv-arbeit.jpg", label: "Bei der Arbeit" },
+  { src: "../assets/motiv-event.jpg",  label: "Vom Event" }
 ];
 
 function kartenAus(zeilen, key) {
@@ -121,6 +134,37 @@ function kartenZeigen() {
     wrap.append(d);
   });
 }
+
+// Betrieb / Event umschalten — füllt das Formular mit der jeweiligen Vorgabe
+document.querySelectorAll("#wbModus button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("#wbModus button").forEach(x => x.setAttribute("aria-pressed", "false"));
+  b.setAttribute("aria-pressed", "true");
+  const istEvent = b.dataset.v === "event";
+  ladeVorgabe(b.dataset.v);
+  $("#wbEventFelder").hidden = !istEvent;
+  $("#wbHaus").value  = state.haus.name;
+  $("#wbFarbe").value = state.haus.farbe;
+  if (istEvent) {
+    $("#wbKicker").value = "Innsbruck · 20. September";
+    $("#wbHead").value   = "HEUTE WIRD\nGEBAUT.\nNICHT GEREDET.";
+    $("#wbKey").value    = "GEBAUT.";
+    $("#wbCta").value    = "Messe Innsbruck, bis 15 Uhr";
+    $("#wbDatum").value  = state.haus.datum;
+    $("#wbOrtDetail").value = state.haus.ortDetail;
+    state.motiv = 2;
+  } else {
+    $("#wbKicker").value = "Navis · Berggasthof";
+    $("#wbHead").value   = "SEIT 1934\nAM SELBEN\nFLECK.";
+    $("#wbKey").value    = "SEIT 1934";
+    $("#wbCta").value    = "Tisch reservieren: 05278 / 2043";
+    state.motiv = 0;
+  }
+  ausFormular();
+});
+["#wbDatum", "#wbOrtDetail"].forEach(s2 => $(s2).oninput = () => {
+  setzeHaus({ datum: $("#wbDatum").value, ortDetail: $("#wbOrtDetail").value });
+  ausFormular();
+});
 
 ["#wbKicker", "#wbHead", "#wbKey", "#wbCta", "#wbHaus", "#wbFarbe"]
   .forEach(s => $(s).oninput = ausFormular);
