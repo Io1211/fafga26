@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { api, Idea, Kennzahlen } from "./api";
-import { Haus, Mail, Spark, Team, Up } from "./icons";
+import { api, Idea, Kennzahlen, Signale } from "./api";
+import { Haus, Mail, Team, Up } from "./icons";
 
 const ENTWUERFE = [
   { titel: "Herbstmenü – Kürbissuppe", meta: "Foto · Instagram · Reel", status: "Entwurf" },
@@ -20,12 +20,16 @@ const INBOX = [
 export default function Uebersicht({ onStudio, onIdeen }:
   { onStudio: () => void; onIdeen: () => void }) {
   const [k, setK] = useState<Kennzahlen | null>(null);
+  const [sig, setSig] = useState<Signale | null>(null);
   const [ideen, setIdeen] = useState<Idea[]>([]);
   const [laedt, setLaedt] = useState(false);
   const [monatTab, setMonatTab] = useState<"jahr" | "woche">("jahr");
   const [aktiverMonat, setAktiverMonat] = useState<string | null>(null);
 
-  useEffect(() => { api.kennzahlen().then(setK).catch(() => {}); }, []);
+  useEffect(() => {
+    api.kennzahlen().then(setK).catch(() => {});
+    api.signale().then(setSig).catch(() => {});
+  }, []);
 
   async function erzeugen() {
     setLaedt(true);
@@ -58,11 +62,15 @@ export default function Uebersicht({ onStudio, onIdeen }:
               <div className="eyebrow">Selbst gemacht · ohne Agentur</div>
               <h2>Was heute sichtbar werden soll</h2>
             </div>
-            <div className="spacer" />
-            <button className="btn" onClick={erzeugen} disabled={laedt}>
-              <Spark />{laedt ? "denkt …" : "Ideen erzeugen"}
-            </button>
           </div>
+
+          {sig && (sig.wetter.kurz || sig.feiertage.kurz || sig.events.kurz) && (
+            <div className="chips" style={{ marginBottom: 14 }}>
+              {sig.wetter.kurz && <span className="chip">☀ {sig.wetter.kurz}</span>}
+              {sig.feiertage.kurz && <span className="chip">📅 {sig.feiertage.kurz}</span>}
+              {sig.events.kurz && <span className="chip">📍 {sig.events.kurz}</span>}
+            </div>
+          )}
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
             {[["gast", gast], ["team", team]].map(([art, idee]) => {
@@ -88,7 +96,11 @@ export default function Uebersicht({ onStudio, onIdeen }:
             })}
           </div>
 
-          <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+          <div className="actions">
+            <button className="btn" onClick={erzeugen} disabled={laedt}>
+              {laedt && <span className="spin" />}
+              {laedt ? "denkt …" : "Ideen erzeugen"}
+            </button>
             <button className="btn primary" onClick={onStudio}>Foto hochladen</button>
             <button className="btn" onClick={onIdeen}>Alle Ideen ansehen</button>
           </div>
@@ -137,20 +149,36 @@ export default function Uebersicht({ onStudio, onIdeen }:
           <button className="btn primary" onClick={onStudio}><Up />Beitrag planen</button>
         </div>
         {monatTab === "jahr" ? (
-          <div className="months">
-            {(k?.monate ?? []).map((m) => (
-              <div className="month" key={m.monat}
-                data-on={aktiverMonat ? aktiverMonat === m.monat : !!m.aktiv}
-                onClick={() => setAktiverMonat(m.monat)}>
-                <div className="m">{m.monat}</div>
-                <div className="t">{m.thema}</div>
-                <div className="f">
-                  {m.kanaele.map((c) => <span className="kk" key={c}>{c}</span>)}
-                  <span className="n">{m.posts}<small>Posts</small></span>
+          <>
+            <div className="months">
+              {(k?.monate ?? []).map((m) => (
+                <div className="month" key={m.monat}
+                  data-on={aktiverMonat ? aktiverMonat === m.monat : !!m.aktiv}
+                  onClick={() => setAktiverMonat(m.monat)}>
+                  <div className="m">{m.monat}</div>
+                  <div className="t">{m.thema}</div>
+                  <div className="f">
+                    {m.kanaele.map((c) => <span className="kk" key={c}>{c}</span>)}
+                    <span className="n">{m.posts}<small>Posts</small></span>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+            {(() => {
+              const name = aktiverMonat ?? (k?.monate ?? []).find((m) => m.aktiv)?.monat ?? null;
+              const monat = (k?.monate ?? []).find((m) => m.monat === name);
+              return monat?.termine?.length ? (
+                <div style={{ marginTop: 14 }}>
+                  <div className="eyebrow">Termine im {monat.monat}</div>
+                  <div className="chips" style={{ marginTop: 6 }}>
+                    {monat.termine.map((t) => (
+                      <span className="chip" key={t.titel}>{t.titel} · {t.datum}</span>
+                    ))}
+                  </div>
+                </div>
+              ) : null;
+            })()}
+          </>
         ) : (
           <div className="quellen">Wochenansicht folgt — noch nicht angebunden.</div>
         )}

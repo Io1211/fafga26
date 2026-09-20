@@ -51,6 +51,24 @@ Oberfläche zeigt oben rechts, welcher Motor gerade arbeitet.
 Jede erfolgreiche Antwort wird unter `backend/data/cache/` abgelegt. Was einmal
 funktioniert hat, funktioniert beim Vortrag wieder, auch ohne Netz.
 
+## Wetter, Feiertage, Events anbinden
+
+`backend/.env` um folgende Zeilen ergänzen:
+
+```
+TICKETMASTER_API_KEY=...
+LAND=AT
+```
+
+Wetter (Open-Meteo) und Feiertage (Nager.Date) brauchen keinen Schlüssel und
+laufen sofort. Events in der Nähe brauchen einen kostenlosen Ticketmaster-Key
+von [developer.ticketmaster.com](https://developer.ticketmaster.com/) — ohne
+Key liefert `/api/signale` einfach eine leere Event-Liste, der Rest
+funktioniert weiter. Alle drei Quellen sind pro Tag und Ort gecacht und werden
+in die Post-Ideen eingewoben (`POST /api/ideas`): passt das Wetter, ein
+Feiertag oder ein Event zum Betrieb, taucht das als eigener Vorschlag samt
+Quellenangabe auf.
+
 ## Was drin ist
 
 | Bereich | Stand |
@@ -59,6 +77,7 @@ funktioniert hat, funktioniert beim Vortrag wieder, auch ohne Netz.
 | Caption, Hashtags, Overlay-Text | Mistral Vision, Rückfall Haus-Muster |
 | Gäste-Post ↔ Mitarbeiter-Post aus demselben Foto | echt |
 | Post-Ideen mit Drehplan | Mistral Text, Rückfall Haus-Muster |
+| Wetter, Feiertage, Events in der Nähe | echt (Open-Meteo, Nager.Date, Ticketmaster) |
 | Hausgedächtnis (Belege, Sperrliste, Farbe, CTAs) | `backend/data/house.json` |
 | Prüfliste gegen die Sperrliste | echt, serverseitig |
 | Kennzahlen, Kanäle, Jahreskalender | **Stub für die Demo**, nicht angebunden |
@@ -94,6 +113,7 @@ die KI aus, ist die Headline schlechter — das Bild bleibt sauber gesetzt.
 | POST | `/api/posts/{id}/variante` | dasselbe Foto, andere Zielgruppe |
 | POST | `/api/ideas` | Post-Ideen mit Drehplan |
 | GET | `/api/kennzahlen` | Stub-Kennzahlen für die Demo |
+| GET | `/api/signale` | Wetter, Feiertage, Events in der Nähe |
 
 ## Struktur
 

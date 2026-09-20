@@ -6,8 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from . import house as house_store
-from . import llm, render
-from .config import DATA, STATIC, UPLOADS, HAS_KEY, MODEL_TEXT, MODEL_VISION
+from . import llm, render, signale
+from .config import DATA, STATIC, UPLOADS, HAS_KEY, LAND, MODEL_TEXT, MODEL_VISION
 from .schemas import House, IdeaRequest, PostOut
 
 app = FastAPI(title="Hauspost API", version="0.1.0")
@@ -100,6 +100,13 @@ def ideen(req: IdeaRequest):
     return {"engine": engine, "ideen": [i.model_dump() for i in items]}
 
 
+@app.get("/api/signale")
+def signale_get():
+    """Wetter, Feiertage, Events in der Naehe - Kontext fuer die Ideen."""
+    h = house_store.load()
+    return signale.alle(h.ort, LAND)
+
+
 @app.get("/api/kennzahlen")
 def kennzahlen():
     """Demo-Kennzahlen. Im UI als Beispieldaten gekennzeichnet."""
@@ -126,7 +133,12 @@ def kennzahlen():
             {"monat": "Juni", "thema": "Sommerstart", "posts": 7, "kanaele": ["IG", "FB"]},
             {"monat": "Juli", "thema": "Genussmomente", "posts": 6, "kanaele": ["IG", "TT"]},
             {"monat": "August", "thema": "Local Stories", "posts": 5, "kanaele": ["IG", "LI"]},
-            {"monat": "September", "thema": "Erntezeit", "posts": 4, "kanaele": ["IG", "FB"], "aktiv": True},
+            {"monat": "September", "thema": "Erntezeit", "posts": 4, "kanaele": ["IG", "FB"], "aktiv": True,
+             "termine": [
+                 {"titel": "Törggelen", "datum": "12.09."},
+                 {"titel": "Messe Fafga", "datum": "19.–20.09."},
+                 {"titel": "Hochzeit", "datum": "26.09."},
+             ]},
             {"monat": "Oktober", "thema": "Herbst-Retreat", "posts": 3, "kanaele": ["IG", "TT"]},
             {"monat": "November", "thema": "Advent Teaser", "posts": 2, "kanaele": ["IG", "FB"]},
             {"monat": "Dezember", "thema": "Festtage", "posts": 4, "kanaele": ["IG", "LI"]},

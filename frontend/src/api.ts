@@ -20,7 +20,13 @@ export interface Kennzahlen {
   beispieldaten: boolean;
   kacheln: { label: string; wert: string; delta?: number; hinweis?: string }[];
   kanaele: { name: string; kuerzel: string; delta: number; anteil: number }[];
-  monate: { monat: string; thema: string; posts: number; kanaele: string[]; aktiv?: boolean }[];
+  monate: { monat: string; thema: string; posts: number; kanaele: string[]; aktiv?: boolean;
+    termine?: { titel: string; datum: string }[] }[];
+}
+export interface Signale {
+  wetter: { kurz: string; tage: { datum: string; beschreibung: string; max: number; min: number }[] };
+  feiertage: { kurz: string; liste: { datum: string; name: string }[] };
+  events: { kurz: string; liste: { name: string; datum: string; ort: string }[] };
 }
 
 async function j<T>(r: Response): Promise<T> {
@@ -51,4 +57,5 @@ export const api = {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ anzahl, ziel: ziel ?? null }),
     }).then(j<{ engine: string; ideen: Idea[] }>),
+  signale: () => fetch("/api/signale").then(j<Signale>),
 };

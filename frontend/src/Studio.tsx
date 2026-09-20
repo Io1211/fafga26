@@ -61,7 +61,7 @@ export default function Studio() {
               <span className="tag grau">{post.engine}</span>
             </div>
             <div className="preview"><img src={post.renders[fmt]} alt="" /></div>
-            <div style={{ display: "flex", gap: 10, marginTop: 14 }}>
+            <div className="actions">
               <button className="btn primary" onClick={drehen} disabled={laedt}>
                 {laedt ? <span className="spin" /> : null}
                 Gleiches Foto, {post.ziel === "gast" ? "für Mitarbeitende" : "für Gäste"}
