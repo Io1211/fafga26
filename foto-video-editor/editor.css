@@ -1,0 +1,103 @@
+/* MODUL 2 · Editor — Bühne, Motive, Video. Gehört Modul 2. */
+
+.stage{position:sticky;top:calc(64px + env(safe-area-inset-top,0px));
+  display:flex;flex-direction:column;gap:13px;align-items:center}
+.stagehead{display:flex;align-items:center;gap:10px;width:100%;max-width:360px}
+.stagehead .eyebrow{margin-right:auto}
+
+.canvaswrap{background:#111;border-radius:3px;overflow:hidden;
+  box-shadow:0 20px 44px -26px rgba(0,0,0,.55);border:1px solid var(--line-strong);max-width:100%}
+.canvaswrap canvas{display:block;width:340px;max-width:100%;height:auto}
+.stagenote{font-family:var(--mono);font-size:10px;color:var(--fg-faint);letter-spacing:.04em;
+  text-align:center;max-width:340px;line-height:1.5}
+
+.videowrap{width:340px;max-width:100%}
+.videowrap video{width:100%;border-radius:3px;background:#111;display:block;border:1px solid var(--line-strong)}
+
+.motive{display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:7px}
+.motive button{position:relative;padding:0;border:1px solid var(--line-strong);border-radius:3px;
+  overflow:hidden;background:var(--surface-2);cursor:pointer;aspect-ratio:4/5}
+.motive button img{width:100%;height:100%;object-fit:cover;display:block}
+.motive button[aria-pressed="true"]{border-color:var(--loden);box-shadow:0 0 0 2px var(--loden)}
+
+.drop{border:1px dashed var(--line-strong);border-radius:var(--r);padding:16px;text-align:center;
+  color:var(--fg-muted);font-size:12.5px;cursor:pointer;background:var(--surface);
+  transition:border-color .13s,background .13s}
+.drop:hover,.drop.over{border-color:var(--loden);background:var(--loden-wash);color:var(--fg)}
+
+@media (max-width:980px){ .stage{position:static} }
+
+/* Ersatzkasten, solange der Editor nicht eingehängt ist.
+   Das Dashboard sieht damit sofort, wo die Vorschau landet. */
+.editor-platzhalter{width:100%;max-width:340px;aspect-ratio:9/16;border:1px dashed var(--line-strong);
+  border-radius:3px;background:var(--surface);display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:8px;text-align:center;padding:20px;color:var(--fg-muted)}
+.editor-platzhalter p{font-size:12.5px;line-height:1.6}
+.editor-platzhalter code{font-family:var(--mono);font-size:11px;color:var(--fg-faint)}
+
+/* Farbpalette aus dem Logo */
+.palette{display:flex;flex-wrap:wrap;gap:6px}
+.farbtupfer{width:34px;height:34px;border-radius:50%;border:2px solid var(--line-strong);
+  cursor:pointer;padding:0;transition:transform .12s,border-color .12s}
+.farbtupfer:hover{transform:scale(1.08)}
+.farbtupfer[aria-pressed="true"]{border-color:var(--fg);box-shadow:0 0 0 2px var(--paper),0 0 0 4px var(--fg)}
+.swatchbtn{position:relative;padding-left:28px}
+.swatchbtn::before{content:"";position:absolute;left:9px;top:50%;transform:translateY(-50%);
+  width:13px;height:13px;border-radius:3px;background:var(--s);border:1px solid var(--line-strong)}
+#edRandPicker{width:42px;height:36px;padding:0;border:1px solid var(--line-strong);
+  border-radius:var(--r);background:none;cursor:pointer}
+#edFarbe{width:42px;height:36px;padding:0;border:1px solid var(--line-strong);
+  border-radius:var(--r);background:none;cursor:pointer}
+
+/* ---- Vorlagen (K5, K9) ---- */
+.vorlagen{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
+.vorlage{background:var(--surface);border:1px solid var(--line-strong);border-radius:var(--r);
+  padding:10px 8px;font-size:12.5px;font-weight:500;cursor:pointer;color:var(--fg);
+  transition:background .13s,border-color .13s}
+.vorlage:hover{background:var(--surface-2);border-color:var(--fg-faint)}
+.vorlage[aria-pressed="true"]{background:var(--loden);color:#f4f6f2;border-color:var(--loden);font-weight:600}
+
+/* ---- Feineinstellungen ---- */
+details.fein{border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+details.fein > summary{cursor:pointer;padding:11px 14px;font-family:var(--mono);font-size:10.5px;
+  letter-spacing:.11em;text-transform:uppercase;color:var(--fg-muted);list-style:none}
+details.fein > summary::-webkit-details-marker{display:none}
+details.fein > summary::after{content:" ▾";float:right}
+details.fein[open] > summary::after{content:" ▴"}
+details.fein > summary:hover{color:var(--fg)}
+.feininhalt{padding:4px 14px 16px;display:flex;flex-direction:column;gap:18px;
+  border-top:1px solid var(--line)}
+
+label.regler{display:flex;flex-direction:column;gap:5px}
+label.regler > span{font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--fg-faint);display:flex;justify-content:space-between}
+label.regler b{color:var(--fg);font-weight:600;font-variant-numeric:tabular-nums}
+label.regler input[type=range]{width:100%;accent-color:var(--loden)}
+
+label.schalter{display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer}
+label.schalter input{accent-color:var(--loden);width:16px;height:16px}
+
+/* ---- Logo-Position als 3×2-Gitter ---- */
+.posgitter{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;max-width:150px}
+.posgitter .pos{aspect-ratio:3/2;border:1px solid var(--line-strong);border-radius:3px;
+  background:var(--surface);cursor:pointer;position:relative;padding:0}
+.posgitter .pos::after{content:"";position:absolute;width:24%;height:22%;border-radius:2px;
+  background:var(--fg-faint)}
+.posgitter .pos[aria-pressed="true"]{border-color:var(--loden);background:var(--loden-wash)}
+.posgitter .pos[aria-pressed="true"]::after{background:var(--loden)}
+.posgitter .pos[class*="oben"]::after{top:14%}
+.posgitter .pos[class*="unten"]::after{bottom:14%}
+.posgitter .pos[class*="-links"]::after{left:14%}
+.posgitter .pos[class*="-mitte"]::after{left:50%;transform:translateX(-50%)}
+.posgitter .pos[class*="-rechts"]::after{right:14%}
+
+/* Feinversatz nebeneinander */
+.versatz{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* Eigene Vorlagen mit Löschknopf */
+.vorlage{position:relative;display:flex;align-items:center;justify-content:center;gap:4px}
+.vorlage.eigen{border-style:dashed}
+.vorlage .weg{position:absolute;top:2px;right:5px;font-size:13px;line-height:1;
+  color:var(--fg-faint);padding:2px 3px;border-radius:3px}
+.vorlage .weg:hover{color:var(--bad);background:var(--surface)}
+.vorlage[aria-pressed="true"] .weg{color:rgba(244,246,242,.7)}
