@@ -326,13 +326,13 @@
 
         <!-- Content Ideen Modal -->
         <div class="modal-overlay" id="contentIdeasModal">
-            <div class="modal" style="max-width: 1400px; width: 95vw;">
+            <div class="modal" style="max-width: 1500px; width: 96vw; max-height: 95vh;">
                 <div class="modal-header">
                     <h2 class="modal-title">Content Ideen</h2>
                     <button class="modal-close" onclick="closeContentIdeasModal()">&times;</button>
                 </div>
-                <div class="modal-body" style="padding: 0;">
-                    <iframe src="szenarien.html" style="width: 100%; height: 85vh; border: none;" frameborder="0"></iframe>
+                <div class="modal-body" style="padding: 0; overflow: hidden;">
+                    <iframe src="szenarien.html" style="width: 100%; height: calc(95vh - 60px); border: none;" frameborder="0" allow="autoplay"></iframe>
                 </div>
             </div>
         </div>
