@@ -1,0 +1,51 @@
+/* MODUL 1 · Onboarding — gehört Modul 1, hier arbeitet sonst niemand. */
+
+.intro{min-height:100%;display:flex;flex-direction:column;align-items:center;padding:0 16px 56px}
+.introbar{width:100%;max-width:840px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:20px 0 26px}
+
+.dots{display:flex;gap:5px;align-items:center}
+.dots i{display:block;width:22px;height:3px;border-radius:2px;background:var(--line-strong)}
+.dots i.on{background:var(--loden)}
+.dots i.done{background:var(--loden);opacity:.42}
+
+.card{width:100%;max-width:840px;background:var(--surface);border:1px solid var(--line);border-radius:6px;
+  padding:clamp(22px,4vw,38px);display:flex;flex-direction:column;gap:22px}
+.card h2{font-family:var(--display);font-size:clamp(23px,3.6vw,33px);font-weight:800;letter-spacing:-.025em;
+  line-height:1.14;font-variation-settings:"SOFT" 40,"WONK" 1;max-width:20ch}
+.card .lede{font-size:15px;line-height:1.62;max-width:60ch;color:var(--fg-muted)}
+.card .lede strong{color:var(--fg);font-weight:600}
+
+.teach{border-left:2px solid var(--loden);padding:2px 0 2px 14px;font-size:13.5px;line-height:1.6;
+  color:var(--fg-muted);max-width:58ch}
+.teach b{color:var(--fg);font-weight:600}
+
+.nav{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding-top:4px;border-top:1px solid var(--line)}
+.nav .spacer{flex:1}
+
+.why{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.why div{background:var(--surface);padding:15px 14px;display:flex;flex-direction:column;gap:5px}
+.why .n{font-family:var(--mono);font-size:10px;letter-spacing:.1em;color:var(--loden)}
+.why h4{font-size:13.5px;font-weight:600}
+.why p{font-size:12px;color:var(--fg-muted);line-height:1.55}
+
+.peek{display:flex;gap:24px;align-items:center;flex-wrap:wrap}
+.peek canvas{width:158px;max-width:100%;height:auto;border-radius:3px;
+  box-shadow:0 12px 28px -16px rgba(0,0,0,.5);border:1px solid var(--line)}
+.peek .txt{flex:1;min-width:210px;display:flex;flex-direction:column;gap:9px}
+
+.vorschlaege{display:flex;flex-wrap:wrap;gap:6px}
+.vorschlaege button{background:var(--loden-wash);border:1px solid var(--line);border-radius:100px;
+  padding:5px 11px;font-size:12px;cursor:pointer;color:var(--fg-muted);text-align:left}
+.vorschlaege button:hover{border-color:var(--loden);color:var(--fg)}
+
+.zus{display:flex;gap:16px;flex-wrap:wrap}
+.zus > div{flex:1;min-width:230px;display:flex;flex-direction:column;gap:7px;
+  border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.zus h4{font-size:13.5px;font-weight:600}
+
+.summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1px;background:var(--line);
+  border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.summary div{background:var(--surface);padding:13px 14px;display:flex;flex-direction:column;gap:3px}
+.summary .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--fg-faint)}
+.summary .v{font-size:13.5px;font-weight:500}

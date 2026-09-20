@@ -1,0 +1,27 @@
+/* MODUL 4 · Text & Ausgabe — Vorschlag, Karten, Prüfliste. Gehört Modul 4. */
+
+.out{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;
+  display:flex;flex-direction:column;gap:12px}
+.out .kicker{font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--fg-faint)}
+.out .headline{font-family:var(--display);font-size:21px;font-weight:800;line-height:1.13;
+  letter-spacing:-.02em;text-transform:uppercase;font-variation-settings:"SOFT" 30,"WONK" 1}
+.out .headline em{font-style:normal;color:var(--hausfarbe)}
+.caption{white-space:pre-wrap;font-size:13px;line-height:1.65}
+.tags{font-family:var(--mono);font-size:11.5px;color:var(--loden);word-break:break-word;line-height:1.7}
+
+.cards{display:flex;flex-wrap:wrap;gap:6px}
+.kcard{display:flex;flex-direction:column;gap:2px;padding:6px 9px;border:1px solid var(--line-strong);
+  border-radius:3px;background:var(--surface);cursor:pointer;min-width:0}
+.kcard:hover{border-color:var(--loden)}
+.kcard .t{font-weight:700;font-size:11.5px;text-transform:uppercase}
+.kcard .t em{font-style:normal;color:var(--hausfarbe)}
+.kcard .m{font-family:var(--mono);font-size:9px;color:var(--fg-faint);font-variant-numeric:tabular-nums}
+.kcard.lang{border-color:var(--warn);background:#fdf8ef}
+.kcard.lang .m{color:var(--warn)}
+
+.checks{display:flex;flex-direction:column;gap:7px}
+.check{display:flex;gap:9px;align-items:flex-start;font-size:12.5px;line-height:1.5}
+.check .dot{flex:0 0 auto;width:7px;height:7px;border-radius:50%;margin-top:6px;background:var(--ok)}
+.check.warn .dot{background:var(--warn)}
+.check.bad .dot{background:var(--bad)}
+.check b{font-weight:600}
