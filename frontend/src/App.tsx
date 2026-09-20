@@ -56,7 +56,6 @@ export default function App() {
           <div className="ic"><Haus /></div>
           <div style={{ minWidth: 0 }}>
             <b>Aktuelle Projekte</b>
-            <small>{house ? `${house.ort} · ${house.art}` : ""}</small>
           </div>
         </div>
 
