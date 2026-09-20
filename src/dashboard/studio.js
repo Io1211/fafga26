@@ -11,7 +11,8 @@
 
 import { state, setzePost, setzeOption, on } from "../core/state.js";
 import { $, $$, esc, toast, bildHolen } from "../core/dom.js";
-import { postAusMuster, postAusKi, pruefen, promptBauen } from "./text.js";
+import { postAusMuster, postAusKi, promptBauen } from "../ai/text.js";
+import { pruefen } from "./pruefen.js";
 import { frage, FEHLERTEXT } from "../ai/client.js";
 
 let musterIndex = 0;

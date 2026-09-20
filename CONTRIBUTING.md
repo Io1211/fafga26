@@ -1,23 +1,104 @@
 # Arbeiten im Team
 
-Vier Leute, vier Module, ein Produkt. Damit das ohne Merge-Konflikte geht:
+Vier Leute, drei Module, **ein** Produkt.
 
-## 1. Nur im eigenen Ordner arbeiten
-
-| Wer | Ordner | Darf dort alles ändern |
+| Modul | Ordner | Wer |
 |---|---|---|
-| Modul 1 | `src/onboarding/` | ✔ |
-| Modul 2 | `src/editor/` | ✔ |
-| Modul 3 | `src/ai/` | ✔ |
-| Modul 4 | `src/post/` | ✔ |
+| **1 · Foto- und Video-Editor** | `src/editor/` | Elias |
+| **2 · Dashboard** — der Weg von vorne bis zum Posten | `src/dashboard/` | zwei Personen |
+| **3 · KI-Assistent** | `src/ai/` | eine Person |
 
-**Gemeinsame Dateien** — vor einer Änderung kurz Bescheid sagen:
-`src/core/state.js` · `src/core/dom.js` · `src/main.js` · `index.html` · `styles/base.css`
+---
 
-Jedes Modul baut sein eigenes Markup und bringt seine eigene CSS-Datei mit. Deshalb muss
-niemand `index.html` anfassen, um etwas anzuzeigen.
+## Die wichtigste Entscheidung: eine Seite, nicht drei
 
-## 2. Der Vertrag: `src/core/state.js`
+**Eigene Ordner: ja. Eigene HTML-Seiten als Produkt: nein.**
+
+Getrennte Produktseiten klingen konfliktfrei, kosten aber genau das, was am Ende fehlt:
+
+- **Hochgeladene Fotos überleben keinen Seitenwechsel.** Ein Foto aus dem Dateidialog lebt als
+  `blob:`-URL im Speicher der Seite. Wechselt man auf eine andere HTML-Seite, ist es weg. Wir
+  müssten Bilder in IndexedDB zwischenlagern, nur damit die Navigation funktioniert — ein halber
+  Tag Arbeit für nichts.
+- **„Am Ende zusammenführen" ist nie eine halbe Stunde.** Drei getrennte Seiten haben drei
+  Zustände, drei Navigationen und drei Kopfzeilen. Das Zusammenführen ist die riskanteste
+  Stunde des Tages, und sie fällt genau dann an, wenn keine Zeit mehr ist.
+
+Stattdessen: **eine `index.html`, drei Modulordner.** Jedes Modul baut sein eigenes Markup und
+bringt seine eigene CSS-Datei mit — deshalb muss niemand `index.html` anfassen, um etwas
+anzuzeigen. Genau dort entstehen sonst die Konflikte.
+
+## Trotzdem allein arbeiten: die Werkbänke
+
+Damit niemand darauf warten muss, dass ein anderes Modul fertig ist, hat jedes Modul eine
+eigene Entwicklungsseite unter `dev/`. Die lädt **nur** dieses Modul, mit erfundenen Daten.
+
+| Seite | Lädt | Für |
+|---|---|---|
+| `dev/editor.html` | nur `src/editor/` | Renderer und Video, mit festem Beispiel-Post |
+| `dev/ki.html` | nur `src/ai/` | Anbindung, Prompt, Antwortauswertung |
+
+Das ist die Antwort auf „eigene HTML-Seiten": **ja zum Entwickeln, nein als Produkt.**
+Legt gerne weitere an — `dev/` gehört niemandem und kann nicht kaputtgehen.
+
+---
+
+## Lokal starten
+
+ES-Module laufen **nicht** über `file://`. Doppelklick auf `index.html` zeigt eine leere Seite.
+
+```bash
+python3 -m http.server 8000
+```
+
+Produkt: <http://localhost:8000> · Werkbänke: <http://localhost:8000/dev/editor.html>
+
+---
+
+## Wem gehört was
+
+```
+index.html                  Schale. Nur Einhängepunkte.          GEMEINSAM
+styles/base.css             Farben, Schrift, Bedienelemente.     GEMEINSAM
+src/core/state.js           DER VERTRAG.                         GEMEINSAM
+src/core/dom.js             Kleine Helfer.                       GEMEINSAM
+src/main.js                 Hängt die Module ein.                GEMEINSAM
+
+src/editor/                 MODUL 1 — Elias
+  image.js                  Canvas-Renderer, zeichnePost()
+  video.js                  Story-Video, baueVideo()
+  editor.js                 Bühne, Motivauswahl, Export
+  editor.css
+
+src/dashboard/              MODUL 2 — zwei Personen
+  einrichten.js             Einrichtungs-Assistent (6 Schritte), Hausgedächtnis
+  studio.js                 Studio-Spalte: Zielgruppe, Vorschlag, Karten
+  pruefen.js                Prüfliste — das Tor vor dem Posten
+  dashboard.css, studio.css
+
+src/ai/                     MODUL 3 — eine Person
+  client.js                 frage({prompt, bild}) → JSON. Mistral, Key-Handling
+  muster.js                 Haus-Muster: der Textmotor ohne KI
+  text.js                   Captions, Hashtags, Untertitel-Karten, Prompt
+```
+
+**Die fünf gemeinsamen Dateien sind die einzigen, in denen Konflikte entstehen können.**
+Wer dort etwas ändern muss, sagt es kurz — sonst gilt: nur im eigenen Ordner.
+
+### Wie sich die zwei Dashboard-Leute aufteilen
+
+Nach **Datei**, nicht nach Zeile. Vorschlag:
+
+- **Person A:** `einrichten.js` — der Assistent, das Hausgedächtnis, die Schublade „Mein Haus"
+- **Person B:** `studio.js` + `pruefen.js` — Zielgruppe, Vorschlag, Untertitel-Karten,
+  Prüfliste und der Schritt „Posten"
+
+Wächst das, wird pro Bildschirm eine Datei daraus (`schritte/01-…js`) — dann hat jeder Schritt
+genau einen Besitzer.
+
+---
+
+## Der Vertrag: `src/core/state.js`
 
 Alles, was zwischen Modulen fließt, steht dort. Gelesen wird direkt, geschrieben **nur** über
 die `setze…`-Funktionen — sonst erfährt kein anderes Modul davon.
@@ -30,11 +111,11 @@ setzePost({ ... });       // schreiben → alle Horcher werden benachrichtigt
 on("haus", () => { ... }) // auf Änderungen anderer Module reagieren
 ```
 
-Themen für `on()`: `"haus"`, `"post"`, `"motiv"`, `"ki"`, `"ansicht"`.
+Themen für `on()`: `"haus"` · `"post"` · `"motiv"` · `"ki"` · `"ansicht"`
 
 ### Das `post`-Objekt — die wichtigste Schnittstelle
 
-Modul 4 schreibt es, Modul 2 rendert genau das:
+Modul 3 erzeugt es, Modul 2 gibt es frei, Modul 1 rendert genau das:
 
 ```js
 {
@@ -50,43 +131,45 @@ Modul 4 schreibt es, Modul 2 rendert genau das:
 
 ### Das `haus`-Objekt
 
-Modul 1 schreibt es, alle lesen:
+Modul 2 schreibt es, alle lesen:
 
 ```js
 { name, ort, art, farbe, logo, belege[], sperr[], ctaGast, ctaTeam }
 ```
 
-## 3. Git
+### Was die Module voneinander aufrufen dürfen
 
-```bash
-git checkout -b modul2/video-uebergaenge    # eigener Branch je Feature
-# arbeiten, committen
-git push -u origin modul2/video-uebergaenge  # dann Pull Request
+```js
+// Modul 2 und 3 dürfen beim Editor (Modul 1):
+import { zeichnePost, alsPng } from "../editor/image.js";
+import { baueVideo }           from "../editor/video.js";
+
+// Modul 2 darf beim KI-Assistenten (Modul 3):
+import { frage, FEHLERTEXT }   from "../ai/client.js";
+import { postAusMuster, postAusKi, promptBauen } from "../ai/text.js";
 ```
 
-Branch-Namen: `modul<nr>/<was>`. Vor dem Push einmal `git pull --rebase origin main`.
+**Modul 1 und 3 importieren nichts aus `dashboard/`.** Wer etwas nach oben melden will, benutzt
+`melden("…")` aus `state.js`. So bleibt die Richtung der Abhängigkeiten eindeutig.
 
-## 4. Vor jedem Commit
+**Modul 2 blockiert nicht auf Modul 3:** `postAusMuster()` erzeugt auch ohne KI einen
+vollständigen Vorschlag aus den Belegen.
 
-- Läuft die Seite noch? `python3 -m http.server 8000` und durchklicken.
+---
+
+## Git
+
+```bash
+git checkout -b editor/uebergaenge        # ein Branch je Feature
+git pull --rebase origin main             # vor dem Push
+git push -u origin editor/uebergaenge     # dann Pull Request
+```
+
+Branch-Namen: `editor/…` · `dashboard/…` · `ki/…`
+
+## Vor jedem Commit
+
+- Läuft das Produkt noch? `python3 -m http.server 8000`, einmal durchklicken.
 - Konsole ohne Fehler?
-- Umlaute richtig? Alle Dateien sind UTF-8, `index.html` trägt `<meta charset="utf-8">`.
-- **Kein API-Key im Code.** Niemals, auch nicht kurz zum Testen.
-
-## 5. Nächste Schritte je Modul
-
-**Modul 1 — Onboarding**
-Mehrere Betriebe verwalten · Hausgedächtnis exportieren und importieren ·
-Belege aus einer bestehenden Website vorschlagen lassen
-
-**Modul 2 — Editor**
-Mehrere Layout-Varianten je Format · Übergänge zwischen Untertitel-Karten ·
-Mehrere Fotos in einem Video · MP4 statt webm
-
-**Modul 3 — KI-Dienst**
-Mistral produktiv anbinden (CORS prüfen, ggf. kleiner Proxy) · Tokenverbrauch anzeigen ·
-Modellwahl je Aufgabe (Pixtral fürs Bild, mistral-large für Text)
-
-**Modul 4 — Text & Ausgabe**
-Wochenplan: was wurde schon gepostet, was fehlt · mehrere Vorschläge nebeneinander ·
-Karussell-Posts · Übergabe an die Meta-API
+- Umlaute richtig? Alles UTF-8, `index.html` trägt `<meta charset="utf-8">`.
+- **Kein API-Key im Code.** Niemals, auch nicht kurz zum Testen. Das Repo ist öffentlich.

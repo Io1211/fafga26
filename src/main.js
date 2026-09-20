@@ -1,5 +1,5 @@
 /**
- * Schale — hängt die vier Module ein. Sonst nichts.
+ * Schale — hängt die drei Module ein. Sonst nichts.
  *
  * Diese Datei wird selten angefasst. Wer ein Modul baut, arbeitet in
  * seinem eigenen Ordner unter src/ und ändert hier höchstens eine Zeile.
@@ -7,28 +7,28 @@
 
 import { state, laden, on, setzeAnsicht, setzeHaus } from "./core/state.js";
 import { $, esc, toast } from "./core/dom.js";
-import * as onboarding from "./onboarding/onboarding.js";
+import * as einrichten from "./dashboard/einrichten.js";
 import * as editor from "./editor/editor.js";
-import * as post from "./post/post.js";
+import * as post from "./dashboard/studio.js";
 import { zeichnePost } from "./editor/image.js";
 import { pruefen as kiPruefen, keyLesen, keySetzen } from "./ai/client.js";
 
 laden();
 
-/* ---------------- Modul 1 · Onboarding ---------------- */
-onboarding.aufbauen($("#mount-onboarding"), () => {
+/* ---------------- MODUL 2 · Dashboard — Einrichtungs-Assistent ---------------- */
+einrichten.aufbauen($("#mount-einrichten"), () => {
   const peek = $("#obPeek");
   if (peek) zeichnePost(peek, { raster: false });
 });
 
-/* ---------------- Modul 4 · Text & Ausgabe ---------------- */
+/* ---------------- MODUL 2 · Dashboard — Studio ---------------- */
 // Baut zuerst auf, weil es den Einhängepunkt für die Editor-Bedienung liefert.
 const editorSlot = post.aufbauen($("#mount-post"));
 
-/* ---------------- Modul 2 · Editor ---------------- */
+/* ---------------- MODUL 1 · Editor (Elias) ---------------- */
 editor.aufbauen($("#mount-stage"), editorSlot);
 
-/* ---------------- Modul 3 · KI-Statusanzeige ---------------- */
+/* ---------------- MODUL 3 · KI-Assistent — Statusanzeige ---------------- */
 function kiAnzeige() {
   const chip = $("#mount-ki");
   if (!chip) return;
@@ -55,7 +55,7 @@ $("#kiKeyBtn").onclick = () => {
 /* ---------------- Ansicht umschalten ---------------- */
 function ansicht() {
   const imStudio = state.ansicht === "studio";
-  $("#mount-onboarding").hidden = imStudio;
+  $("#mount-einrichten").hidden = imStudio;
   $("#mount-studio").hidden = !imStudio;
   if (imStudio) {
     $("#topHaus").textContent = `${state.haus.name} · ${state.haus.ort}`;
@@ -68,7 +68,7 @@ on("haus", () => {
   document.documentElement.style.setProperty("--hausfarbe", state.haus.farbe);
 });
 
-/* ---------------- Haus-Schublade (gehört Modul 1) ---------------- */
+/* ---------------- Haus-Schublade (gehört Modul 2) ---------------- */
 const drawer = $("#drawer");
 $("#btnHaus").onclick = () => {
   schubladeFuellen();
@@ -89,7 +89,7 @@ function schubladeFuellen() {
   $("#hsFarbeHex").value = h.farbe;
   $("#hsCtaGast").value = h.ctaGast;
   $("#hsCtaTeam").value = h.ctaTeam;
-  onboarding.alleListen();
+  einrichten.alleListen();
 }
 
 $("#hsName").oninput     = e => setzeHaus({ name: e.target.value });
@@ -97,8 +97,8 @@ $("#hsOrt").oninput      = e => setzeHaus({ ort: e.target.value });
 $("#hsArt").onchange     = e => setzeHaus({ art: e.target.value });
 $("#hsCtaGast").oninput  = e => setzeHaus({ ctaGast: e.target.value });
 $("#hsCtaTeam").oninput  = e => setzeHaus({ ctaTeam: e.target.value });
-$("#hsFarbe").oninput    = e => onboarding.farbeSetzen(e.target.value, e.target);
-$("#hsFarbeHex").oninput = e => onboarding.farbeSetzen(e.target.value.trim(), e.target);
+$("#hsFarbe").oninput    = e => einrichten.farbeSetzen(e.target.value, e.target);
+$("#hsFarbeHex").oninput = e => einrichten.farbeSetzen(e.target.value.trim(), e.target);
 $("#hsLogoBtn").onclick  = () => $("#hsLogoFile").click();
 $("#hsLogoFile").onchange = e => {
   const f = e.target.files?.[0];
@@ -108,7 +108,7 @@ $("#hsLogoFile").onchange = e => {
 };
 $("#hsBelegPlus").onclick = () => {
   state.haus.belege.push("");
-  onboarding.alleListen();
+  einrichten.alleListen();
   $("#hsbel" + (state.haus.belege.length - 1))?.focus();
 };
 $("#hsSperrPlus").onclick = () => {
@@ -117,7 +117,7 @@ $("#hsSperrPlus").onclick = () => {
   if (!v) return;
   state.haus.sperr.push(v);
   el.value = "";
-  onboarding.alleListen();
+  einrichten.alleListen();
   setzeHaus({});
 };
 $("#hsSperrNeu").onkeydown = e => {
@@ -125,7 +125,7 @@ $("#hsSperrNeu").onkeydown = e => {
 };
 $("#hsNeu").onclick = () => {
   drawer.removeAttribute("open");
-  onboarding.neuStarten();
+  einrichten.neuStarten();
 };
 
 /* ---------------- Start ---------------- */

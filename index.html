@@ -8,14 +8,14 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
 <link rel="stylesheet" href="styles/base.css">
-<link rel="stylesheet" href="src/onboarding/onboarding.css">
+<link rel="stylesheet" href="src/dashboard/dashboard.css">
 <link rel="stylesheet" href="src/editor/editor.css">
-<link rel="stylesheet" href="src/post/post.css">
+<link rel="stylesheet" href="src/dashboard/studio.css">
 </head>
 <body>
 
-<!-- MODUL 1 baut hier hinein -->
-<div class="intro" id="mount-onboarding"></div>
+<!-- MODUL 2 · Dashboard: Einrichtungs-Assistent -->
+<div class="intro" id="mount-einrichten"></div>
 
 <!-- Studio: Schale. Die Module füllen ihre Einhängepunkte selbst. -->
 <div id="mount-studio" hidden>
@@ -30,9 +30,9 @@
   </header>
 
   <div class="studio">
-    <!-- MODUL 2 -->
+    <!-- MODUL 1 · Editor (Elias) -->
     <section class="stage" id="mount-stage"></section>
-    <!-- MODUL 4 (enthält den Einhängepunkt für die Editor-Bedienung) -->
+    <!-- MODUL 2 · Dashboard: Studio-Spalte, enthält den Einhängepunkt des Editors -->
     <section class="panel" id="mount-post"></section>
   </div>
 
@@ -72,7 +72,7 @@
   </footer>
 </div>
 
-<!-- Haus-Schublade — gehört Modul 1 -->
+<!-- Haus-Schublade — gehört Modul 2 (Dashboard) -->
 <div class="drawer" id="drawer">
   <div class="veil" id="drawerVeil"></div>
   <div class="sheet" role="dialog" aria-modal="true" aria-label="Mein Haus">

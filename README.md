@@ -30,42 +30,36 @@ Dann <http://localhost:8000> öffnen.
 ## Aufbau
 
 ```
-index.html              Schale. Nur Einhängepunkte — wird selten angefasst.
+index.html              Produkt. Nur Einhängepunkte — wird selten angefasst.
+dev/                    Werkbänke: je Modul eine Seite zum Alleine-Arbeiten
 styles/base.css         Farben, Schrift, Bedienelemente. GEMEINSAM.
 assets/                 Demo-Fotos
 src/
   core/state.js         DER VERTRAG zwischen den Modulen. GEMEINSAM.
   core/dom.js           Kleine Helfer. GEMEINSAM.
-  main.js               Hängt die Module ein. Wird selten angefasst.
+  main.js               Hängt die Module ein. GEMEINSAM.
 
-  onboarding/           MODUL 1 — Onboarding & Hausgedächtnis
-  editor/               MODUL 2 — Foto- und Video-Pipeline
-  ai/                   MODUL 3 — KI-Dienst
-  post/                 MODUL 4 — Text & Ausgabe
+  editor/               MODUL 1 — Foto- und Video-Editor
+  dashboard/            MODUL 2 — Der Weg von vorne bis zum Posten
+  ai/                   MODUL 3 — KI-Assistent
 ```
 
-**Die Regel:** Jeder arbeitet nur in seinem Modulordner. Wer `core/state.js`, `styles/base.css`,
-`index.html` oder `main.js` ändern muss, sagt es kurz im Team — das sind die einzigen Dateien,
-in denen Konflikte entstehen können.
+**Eine Seite, drei Modulordner.** Jedes Modul baut sein eigenes Markup und bringt seine eigene
+CSS-Datei mit, deshalb muss niemand `index.html` anfassen. Zum isolierten Arbeiten gibt es je
+Modul eine Werkbank unter `dev/`, die nur dieses Modul lädt.
 
----
-
-## Die vier Module
+## Die drei Module
 
 | Modul | Ordner | Aufgabe | Strategie |
 |---|---|---|---|
-| **1 · Onboarding** | `src/onboarding/` | Einrichtungs-Assistent in sechs Schritten, Hausgedächtnis, Schublade „Mein Haus" | Fundament |
-| **2 · Editor** | `src/editor/` | Canvas-Renderer mit Overlays (`image.js`), Story-Video (`video.js`), Bühne und Export (`editor.js`) | Schritt 1 + 2 |
-| **3 · KI-Dienst** | `src/ai/` | `frage({prompt, bild})` → JSON. Mistral per Token, Claude als Rückfallebene, Key-Handling | Schritt 3 |
-| **4 · Text & Ausgabe** | `src/post/` | Haus-Muster, Captions, Hashtags, Untertitel-Karten, Prüfliste, der Prompt an die KI | Schritt 4 |
+| **1 · Editor** | `src/editor/` | Canvas-Renderer mit Overlays (`image.js`), Story-Video (`video.js`), Bühne und Export (`editor.js`) | Schritt 1 + 2 |
+| **2 · Dashboard** | `src/dashboard/` | Einrichtungs-Assistent, Hausgedächtnis, Studio, Prüfliste, Posten | Der Rahmen |
+| **3 · KI-Assistent** | `src/ai/` | `frage({prompt, bild})` → JSON. Mistral per Token, Haus-Muster als Rückfallebene, Captions und Hashtags | Schritt 3 + 4 |
 
-**Modul 3 und 4 blockieren sich nicht:** Modul 3 ist reiner Dienst, Modul 4 der Verbraucher.
-Modul 4 arbeitet gegen die deterministischen Haus-Muster und funktioniert vollständig, auch
-wenn in Modul 3 noch nichts fertig ist.
+**Modul 2 blockiert nicht auf Modul 3:** `postAusMuster()` erzeugt auch ohne KI einen
+vollständigen Vorschlag aus den Belegen des Hauses.
 
-Details und Schnittstellen: [CONTRIBUTING.md](CONTRIBUTING.md)
-
----
+Schnittstellen, Dateibesitz und Git-Regeln: [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ## Sicherheitshinweis zum API-Key
 
@@ -86,6 +80,7 @@ passiert, braucht es einen kleinen Proxy — bis dahin greifen die Haus-Muster.
 - [x] Onboarding-Assistent
 - [x] Haus-Muster als Textmotor ohne KI
 - [ ] Mistral-Anbindung produktiv (Gerüst steht in `src/ai/client.js`)
+- [ ] Dashboard bis zum Posten durchziehen
 - [ ] Posting-Vorschläge über den Einzelpost hinaus
 - [ ] Ganzer Kameraordner auf einmal
 - [ ] Übergabe direkt an Instagram
