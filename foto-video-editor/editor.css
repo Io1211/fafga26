@@ -15,20 +15,21 @@
  */
 
 .fve {
-  --fve-paper: #f2f3ef;
+  --fve-paper: #f3f4f8;
   --fve-surface: #ffffff;
-  --fve-surface-2: #eaece5;
-  --fve-line: #daded2;
-  --fve-line-strong: #c2c8b8;
+  --fve-surface-2: #e9ebf2;
+  --fve-line: #dcdfe8;
+  --fve-line-strong: #c5c9d8;
   --fve-fg: #191c19;
-  --fve-fg-muted: #5d655c;
-  --fve-fg-faint: #8b9289;
-  --fve-loden: #2f4a3a;
-  --fve-loden-lift: #3d5f4a;
-  --fve-loden-wash: #eef2ed;
-  --fve-ok: #3f6b4a;
-  --fve-warn: #9c7636;
-  --fve-bad: #a8322c;
+  --fve-fg-muted: #5c6275;
+  --fve-fg-faint: #8a90a3;
+  /* Akzent folgt dem Logo (Kobalt); die Namen bleiben aus Kompatibilität. */
+  --fve-loden: #2a63f0;
+  --fve-loden-lift: #1c2b66;
+  --fve-loden-wash: #edf2fe;
+  --fve-ok: #1f8a5b;
+  --fve-warn: #b52a50;
+  --fve-bad: #cf2d57;
   --hausfarbe: #d72229;          /* wird vom Editor gesetzt, absichtlich global */
   --fve-r: 4px;
   --fve-display: "Fraunces", Georgia, "Times New Roman", serif;
