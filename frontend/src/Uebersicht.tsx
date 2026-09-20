@@ -1,12 +1,29 @@
 import { useEffect, useState } from "react";
 import { api, Idea, Kennzahlen } from "./api";
-import { Haus, Spark, Team, Up } from "./icons";
+import { Haus, Mail, Spark, Team, Up } from "./icons";
+
+const ENTWUERFE = [
+  { titel: "Herbstmenü – Kürbissuppe", meta: "Foto · Instagram · Reel", status: "Entwurf" },
+  { titel: "Mitarbeiter gesucht: Service", meta: "Team-Post · Facebook", status: "In Freigabe" },
+  { titel: "Weinverkostung Freitag", meta: "Story · Instagram", status: "Entwurf" },
+];
+
+const INBOX = [
+  { sender: "Maria K.", plattform: "Google Rezension",
+    preview: "Wunderschöner Aufenthalt, das Frühstück war ein Highlight …" },
+  { sender: "@lisa.travels", plattform: "Instagram · DM",
+    preview: "Habt ihr im Oktober noch Zimmer frei für ein verlängertes Wochenende?" },
+  { sender: "Facebook-Nutzer", plattform: "Facebook · Kommentar",
+    preview: "Sucht ihr noch Personal für die Rezeption? Kann ich mich bewerben?" },
+];
 
 export default function Uebersicht({ onStudio, onIdeen }:
   { onStudio: () => void; onIdeen: () => void }) {
   const [k, setK] = useState<Kennzahlen | null>(null);
   const [ideen, setIdeen] = useState<Idea[]>([]);
   const [laedt, setLaedt] = useState(false);
+  const [monatTab, setMonatTab] = useState<"jahr" | "woche">("jahr");
+  const [aktiverMonat, setAktiverMonat] = useState<string | null>(null);
 
   useEffect(() => { api.kennzahlen().then(setK).catch(() => {}); }, []);
 
@@ -113,19 +130,77 @@ export default function Uebersicht({ onStudio, onIdeen }:
             <h2>Social-Media-Jahreskalender</h2>
           </div>
           <div className="spacer" />
-          <button className="btn primary"><Up />Beitrag planen</button>
+          <div className="tabs">
+            <button data-on={monatTab === "jahr"} onClick={() => setMonatTab("jahr")}>Jahr</button>
+            <button data-on={monatTab === "woche"} onClick={() => setMonatTab("woche")}>Diese Woche</button>
+          </div>
+          <button className="btn primary" onClick={onStudio}><Up />Beitrag planen</button>
         </div>
-        <div className="months">
-          {(k?.monate ?? []).map((m) => (
-            <div className="month" key={m.monat} data-on={!!m.aktiv}>
-              <div className="m">{m.monat}</div>
-              <div className="t">{m.thema}</div>
-              <div className="f">
-                {m.kanaele.map((c) => <span className="kk" key={c}>{c}</span>)}
-                <span className="n">{m.posts}<small>Posts</small></span>
+        {monatTab === "jahr" ? (
+          <div className="months">
+            {(k?.monate ?? []).map((m) => (
+              <div className="month" key={m.monat}
+                data-on={aktiverMonat ? aktiverMonat === m.monat : !!m.aktiv}
+                onClick={() => setAktiverMonat(m.monat)}>
+                <div className="m">{m.monat}</div>
+                <div className="t">{m.thema}</div>
+                <div className="f">
+                  {m.kanaele.map((c) => <span className="kk" key={c}>{c}</span>)}
+                  <span className="n">{m.posts}<small>Posts</small></span>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
+        ) : (
+          <div className="quellen">Wochenansicht folgt — noch nicht angebunden.</div>
+        )}
+      </div>
+
+      <div className="grid2">
+        <div className="card">
+          <div className="rowhead">
+            <h2 style={{ fontSize: 19 }}>Aktuelle Entwürfe</h2>
+            <div className="spacer" />
+            <span className="eyebrow">{ENTWUERFE.length}</span>
+          </div>
+          <div className="entwuerfe-list">
+            {ENTWUERFE.map((e) => (
+              <div className="entwurf-item" key={e.titel} onClick={onStudio}>
+                <div className="entwurf-thumb" />
+                <div className="entwurf-info">
+                  <div className="entwurf-title">{e.titel}</div>
+                  <div className="entwurf-meta">{e.meta}</div>
+                </div>
+                <span className={"entwurf-status" + (e.status === "In Freigabe" ? " in-freigabe" : "")}>
+                  {e.status}
+                </span>
+              </div>
+            ))}
+          </div>
+          <div className="quellen" style={{ marginTop: 14 }}>Beispieldaten für die Demo, nicht angebunden.</div>
+        </div>
+
+        <div className="card">
+          <div className="rowhead">
+            <h2 style={{ fontSize: 19 }}>Inbox</h2>
+            <div className="spacer" />
+            <span className="eyebrow">{INBOX.length} offen</span>
+          </div>
+          <div className="inbox-list">
+            {INBOX.map((i) => (
+              <div className="inbox-item" key={i.sender}>
+                <div className="inbox-avatar"><Mail /></div>
+                <div className="inbox-content">
+                  <div className="inbox-header">
+                    <span className="inbox-sender">{i.sender}</span>
+                    <span className="inbox-platform">{i.plattform}</span>
+                  </div>
+                  <div className="inbox-preview">{i.preview}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="quellen" style={{ marginTop: 14 }}>Beispieldaten für die Demo, nicht angebunden.</div>
         </div>
       </div>
     </>
