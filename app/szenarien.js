@@ -21,7 +21,7 @@ const PERSP = {
   lena:{name:'Lena', role:'Service (Lehrling)', emoji:'🧑‍🍽️', bot:'Gastgeber-Copilot', sub:'Assistent · online', av:'🤖', mail:'lena@gasthof-alpenblick.at'},
   tim:{name:'Tim', role:'Bewerber', emoji:'🧑', bot:'Gasthof Alpenblick', sub:'digitaler Assistent · antwortet sofort', av:'🏡', mail:'tim@example.com'}
 };
-const state = {persp:'maria', chan:'wa', subject:'', subjects:{}, cast:['maria'], threads:{}, unread:{}, typing:{}, log:[], inbox:[], stats:{posts:0,apps:0,min:0}, pendings:{}, speed:1, run:0, clock:'08:00', msgId:0, lastSc:null};
+const state = {persp:'maria', chan:'wa', subject:'', subjects:{}, cast:['maria'], threads:{}, unread:{}, typing:{}, log:[], inbox:[], stats:{posts:0,apps:0,min:0}, pendings:{}, run:0, clock:'08:00', msgId:0, lastSc:null};
 Object.keys(PERSP).forEach(k=>{ state.threads[k]=[]; });
 const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ABORT = Symbol('abort');
@@ -48,7 +48,7 @@ function logLine(text){ state.log.push({text,done:true}); renderLog(); }
 function newRun(){
   const id=++runSeq; state.run=id; state.pendings={}; state.typing={};
   const chk=()=>{ if(state.run!==id) throw ABORT; };
-  const sleep=async ms=>{ await new Promise(r=>setTimeout(r,ms*state.speed)); chk(); };
+  const sleep=async ms=>{ await new Promise(r=>setTimeout(r,ms)); chk(); };
   const subj=(th,o)=>{ if(o.subject) state.subjects[th]=o.subject; };
   return {
     sleep,
@@ -89,14 +89,14 @@ function pick(msgId, optId){
   const p=state.pendings[th];
   m.buttons=null; m.chosen=opt.label; push(th,{from:'me',via:'click',text:opt.label});
   if(p && p.msg===m){ delete state.pendings[th]; p.resolve(optId); }
-  else if(opt.reply){ setTyping(th,true); setTimeout(()=>{ setTyping(th,false); push(th,{from:'bot',text:opt.reply}); }, 900*state.speed); }
+  else if(opt.reply){ setTyping(th,true); setTimeout(()=>{ setTyping(th,false); push(th,{from:'bot',text:opt.reply}); }, 900); }
   renderThread();
 }
 /* Demo-Hilfe: alle Mitarbeitenden (außer Chefin) beantworten offene Rückfragen mit der ersten Option */
 async function autoTeam(){
   const id=state.run; let idle=0;
   while(state.run===id && idle<4){
-    await new Promise(r=>setTimeout(r,700*state.speed));
+    await new Promise(r=>setTimeout(r,700));
     const ths=Object.keys(state.pendings).filter(t=>t!=='maria');
     if(!ths.length){ idle++; continue; }
     idle=0;
@@ -124,7 +124,7 @@ function onSend(text){
   }
   botSay(th,'Danke! Ich schaue mir das an. 👍');
 }
-function botSay(th,text,o={}){ setTyping(th,true); setTimeout(()=>{ setTyping(th,false); push(th,{from:'bot',text,cards:o.cards}); }, 900*state.speed); }
+function botSay(th,text,o={}){ setTyping(th,true); setTimeout(()=>{ setTyping(th,false); push(th,{from:'bot',text,cards:o.cards}); }, 900); }
 
 /* ============================== BAUSTEINE ============================== */
 const OK = (extra={}) => ({id:'ok',label:'👍 Alles freigeben',keys:['ok','passt','freigeb','ja','👍','gut'],...extra});
@@ -330,35 +330,57 @@ const PLAN_EROEFFNUNG={icon:'🆕',short:'Neueröffnung Gondelbahn',endText:'All
   final:({res,done})=>({intro:'Perfekt – so sieht der Beitrag aus:',cards:[{title:'Instagram-Caption',text:'Neu in der Region: Die Gondelbahn „Almblick" eröffnet am Samstag – nur 12 km von uns. 🚠\n\n'+(res.tip?'Unser Tipp: früh losfahren (vor 10 Uhr ist wenig los) und danach Jause beim Huberwirt an der Bergstation.\n\n':'')+'Öffnungszeiten: '+(res.hours||'[bitte vom Betreiber eintragen]')+'. Preise: [bitte vom Betreiber eintragen]\n\n'+(res.jause?'Rucksack-Jause auf Vorbestellung an der Rezeption.\n\n':'')+'#almblick #tirol #ausflugstipp'}],item:{title:'Neu: Gondelbahn Almblick'+(res.tip?' + Insider-Tipp':''),channels:['Instagram','Facebook']},minutes:25,when:'Ich poste Freitag 17:00 – bevor Gäste ihr Wochenende planen.',
     also:done('ivana')?[{title:'Tippkarte Gondelbahn (Druck)',channels:['Druck','Zimmermappen'],status:'freigegeben'}]:[],alsoMinutes:8})};
 
-/* ---------- 4. Veranstaltungshinweise (echte Termine als Beispiel, recherchiert bei den Veranstaltern) ---------- */
-const PLAN_EVENT={icon:'🎪',short:'Veranstaltungshinweise',endText:'Alles klar, ich melde mich bei der nächsten Veranstaltung wieder. Das Team wurde informiert.',
-  signals:['🎪 Signal: 3 Veranstaltungen erkannt (Veranstalter-Webseiten fafga.at, kidu.at, kitzbuehel.com)','🧠 Einordnung: FAFGA (20.–22.9.) + KIDU-Buildathon (20.9.) = Branchen-Events für Betrieb & Team · KitzBeach (10.–13.9.) = Gäste-Event','🔎 Fakten-Check: Termine & Orte laut Veranstalter · nicht bekannt (nicht erfunden): FAFGA-Öffnungszeiten, Ticketpreise','🧠 Chance „Veranstaltungshinweise" · Score 71 → Digest'],
-  facts:['FAFGA meets future: 20.–22.9.2026, Messe Innsbruck (Quelle: fafga.at)','KIDU × FAFGA KI-Buildathon: 20.9., Messe Innsbruck (Quelle: kidu.at)','KitzBeach: 10.–13.9., Tennisstadion Kitzbühel (Quelle: kitzbuehel.com)'],
-  overview:{subject:'🎪 FAFGA, KI-Buildathon & KitzBeach – Veranstaltungshinweise für dein Team',
-    text:'🎪 Veranstaltungen, die ihr für euer Marketing nutzen könnt (recherchiert bei den Veranstaltern):\n\n🏐 Für Gäste\n• Vom 10. bis 13. September findet KitzBeach im Tennisstadion Kitzbühel statt (Beachvolleyball-Staatsmeisterschaften) – schon in 5 Tagen.\n\n🏢 Für euch als Betrieb (Fachpublikum)\n• Vom 20. bis 22. September findet die FAFGA meets future in der Messe Innsbruck statt – in 15 Tagen. Tickets gibt es im Vorverkauf.\n• Am 20. September findet der KIDU × FAFGA KI-Buildathon statt (kostenlos, ab 16 Jahren).\n\nIch habe Aufgaben je Rolle vorbereitet und dein Team angeschrieben:',
-    mail:{facts:['FAFGA meets future: 20.–22.9.2026 (Sonntag bis Dienstag, erstmals dreitägig), Messe Innsbruck – Schwerpunkte: KI, Digitalisierung, Nachhaltigkeit, Recruiting, Nahrungsmittel/Getränke, Hotelausstattung (Quelle: fafga.at)','KIDU × FAFGA KI-Buildathon: 20.9., Messe Innsbruck · 100 Plätze, ab 16 Jahren, kostenlos, keine Programmierkenntnisse nötig · Finale ab 15:00 Uhr (Quelle: kidu.at)','KitzBeach 2026: 10.–13.9., Tennisstadion Kitzbühel (Business Cup 10.9., Staatsmeisterschaften 11.–13.9., Trachtensonntag 13.9.) (Quelle: kitzbuehel.com)','FAFGA: Tickets im Vorverkauf über den Webshop (Quelle: fafga.at)','Nicht bekannt, deshalb nicht erwähnt: FAFGA-Öffnungszeiten, Ticketpreise'],src:'Die KI nennt nur, was die Veranstalter selbst veröffentlichen, und erfindet keine Uhrzeiten oder Preise.'}},
+/* ---------- 4. Veranstaltungshinweise: ein Szenario pro Event (echte Termine, recherchiert bei den Veranstaltern) ---------- */
+const PLAN_EVENT_KITZ={icon:'🏐',short:'Veranstaltungshinweis KitzBeach',endText:'Alles klar, ich erinnere dich noch einmal vor dem Turnier. Das Team wurde informiert.',
+  signals:['🎪 Signal: Veranstaltung erkannt – KitzBeach (Veranstalterseite kitzbuehel.com)','🧠 Einordnung: Gäste-Event, viele Anfragen an der Rezeption zu erwarten','🔎 Fakten-Check: Termin, Ort, Tickets & Anreise laut Veranstalter · nicht bekannt (nicht erfunden): Uhrzeiten einzelner Spiele','🧠 Chance „Veranstaltungshinweis KitzBeach" · Score 68 → Digest'],
+  facts:['KitzBeach 2026: 10.–13.9., Tennisstadion Kitzbühel (Quelle: kitzbuehel.com)'],
+  overview:{subject:'🏐 KitzBeach, 10.–13.9. in Kitzbühel – Veranstaltungshinweis',
+    text:'🏐 Vom 10. bis 13. September findet KitzBeach im Tennisstadion Kitzbühel statt (Beachvolleyball-Staatsmeisterschaften) – schon in 5 Tagen. Gäste werden danach fragen. Ich habe eine Aufgabe für die Rezeption vorbereitet und Sabine angeschrieben:',
+    mail:{facts:['KitzBeach 2026: 10.–13.9., Tennisstadion Kitzbühel (Business Cup 10.9., Staatsmeisterschaften 11.–13.9., Trachtensonntag 13.9.) (Quelle: kitzbuehel.com)','Tickets online über kitzbeach.at und Kitzbühel Tourismus; kostenloser Parkplatz für Ticketbesitzer beim Areal (Quelle: kitzbuehel.com)','Nicht bekannt, deshalb nicht erwähnt: Uhrzeiten einzelner Spiele'],src:'Die KI nennt nur, was der Veranstalter selbst veröffentlicht, und erfindet keine Uhrzeiten oder Preise.'}},
   tasks:[
-    {id:'scope',who:'maria',icon:'🎯',label:'Umfang wählen',msg:'🎯 Deine Entscheidung: Was machen wir daraus? Der Messe-Beitrag zeigt, dass ihr euch weiterbildet (gut fürs Recruiting). Der KitzBeach-Beitrag ist ein Ausflugstipp für Gäste.',
-      options:[O('both','✅ Beides',['beides','alle','ja'],'done',{res:{scope:'both'}}),O('messe','🏢 Nur Messe',['messe','nur'],'done',{res:{scope:'messe'}}),O('later','🗓 Später',['später'],'later',{end:true})]},
+    {id:'go',who:'maria',icon:'🎯',label:'Beitrag vorbereiten?',msg:'🎯 Deine Entscheidung: Ein Ausflugstipp zu KitzBeach kommt bei Sportfans unter den Gästen gut an. Soll ich den Beitrag vorbereiten?',
+      options:[O('yes','✅ Ja, vorbereiten',['ja','ok','vorbereiten'],'done'),O('later','🗓 Später',['später'],'later',{end:true})]},
+    {id:'sabine',who:'sabine',icon:'🏐',label:'KitzBeach: Infos für Gäste bereithalten',msg:'🏐 Hallo Sabine, vom 10. bis 13. September findet KitzBeach im Tennisstadion Kitzbühel statt (Beachvolleyball-Staatsmeisterschaften). Gäste werden vorher danach fragen. Laut Veranstalter: Tickets online über kitzbeach.at und Kitzbühel Tourismus; für Ticketbesitzer gibt es einen kostenlosen Parkplatz beim Areal; vom Bahnhof Kitzbühel sind es ca. 20 Gehminuten. Kannst du diese Infos an der Rezeption bereithalten?',
+      facts:['KitzBeach 2026: 10.–13.9., Tennisstadion Kitzbühel','Tickets online: kitzbeach.at, Kitzbühel Tourismus','Kostenloser Parkplatz für Ticketbesitzer beim Areal; ca. 20 Gehminuten vom Bahnhof Kitzbühel','Quelle: kitzbuehel.com'],thanks:'Deine Infos an der Rezeption helfen den Gästen sehr. Danke!',
+      options:[O('yes','✅ Liegt bereit',['ja','bereit','ok'],'done',{res:{kitzInfo:true},reply:'Danke Sabine! Ich erwähne im Post, dass die Rezeption weiterhilft. 🏐'}),O('q','❓ Ich brauche mehr Infos',['infos','frage'],'help',{reply:'Alles klar, ich sage Maria Bescheid.',notify:'🙋 Sabine braucht mehr Infos zu KitzBeach (Tickets/Anreise) für die Rezeption.'})]}
+  ],
+  final:({res})=>({intro:'Perfekt – so sieht der Beitrag aus:',cards:[{title:'Post: Ausflugstipp KitzBeach',text:'Tipp für alle Sportfans: Vom 10. bis 13. September findet KitzBeach im Tennisstadion Kitzbühel statt – die Beachvolleyball-Staatsmeisterschaften. 🏐\n\nAm Trachtensonntag (13.9.) gibt es Weißwurst & Breze gratis für alle in Tracht. Tickets: online über kitzbeach.at oder Kitzbühel Tourismus. Für Ticketbesitzer gibt es einen kostenlosen Parkplatz beim Areal.'+(res.kitzInfo?'\n\nFragen zur Anreise? Unsere Rezeption hilft gern.':'')+'\n\n#kitzbeach #kitzbühel #beachvolleyball'}],item:{title:'Veranstaltungshinweis: KitzBeach',channels:['Instagram','Facebook']},minutes:15,when:'Ich poste den KitzBeach-Tipp am 8.9. um 18:00, zwei Tage vorher.'})};
+
+const PLAN_EVENT_FAFGA={icon:'🏢',short:'Veranstaltungshinweis FAFGA',endText:'Alles klar, ich erinnere dich vor der Messe noch einmal. Das Team wurde informiert.',
+  signals:['🎪 Signal: Veranstaltung erkannt – FAFGA meets future (Veranstalterseite fafga.at)','🧠 Einordnung: Branchenmesse für Betrieb & Team (Fachpublikum), kein Gäste-Event','🔎 Fakten-Check: Termin & Ort laut Veranstalter · nicht bekannt (nicht erfunden): Öffnungszeiten, Ticketpreise','🧠 Chance „Veranstaltungshinweis FAFGA" · Score 71 → Digest'],
+  facts:['FAFGA meets future: 20.–22.9.2026, Messe Innsbruck (Quelle: fafga.at)'],
+  overview:{subject:'🏢 FAFGA meets future, 20.–22.9. in Innsbruck – Veranstaltungshinweis',
+    text:'🏢 Vom 20. bis 22. September findet die FAFGA meets future in der Messe Innsbruck statt – in 15 Tagen. Tickets gibt es im Vorverkauf. Ich habe Aufgaben je Rolle vorbereitet und dein Team angeschrieben:',
+    mail:{facts:['FAFGA meets future: 20.–22.9.2026 (Sonntag bis Dienstag, erstmals dreitägig), Messe Innsbruck – Schwerpunkte: KI, Digitalisierung, Nachhaltigkeit, Recruiting, Nahrungsmittel/Getränke, Hotelausstattung (Quelle: fafga.at)','Tickets im Vorverkauf über den Webshop (Quelle: fafga.at)','Nicht bekannt, deshalb nicht erwähnt: Öffnungszeiten, Ticketpreise'],src:'Die KI nennt nur, was der Veranstalter selbst veröffentlicht, und erfindet keine Uhrzeiten oder Preise.'}},
+  tasks:[
+    {id:'go',who:'maria',icon:'🎯',label:'Beitrag vorbereiten?',msg:'🎯 Deine Entscheidung: Ein Messe-Beitrag zeigt, dass ihr euch weiterbildet (gut fürs Recruiting). Soll ich ihn vorbereiten?',
+      options:[O('yes','✅ Ja, vorbereiten',['ja','ok','vorbereiten'],'done'),O('later','🗓 Später',['später'],'later',{end:true})]},
     {id:'marco',who:'marco',icon:'🥕',label:'Messe-Wunschliste für die Küche (Sprachnachricht)',msg:'🏢 Hallo Marco, Maria besucht die FAFGA (20.–22.9., Fachmesse in Innsbruck). Ein Schwerpunkt ist „Nahrungsmittel/Getränke". Was sollen wir uns für die Küche ansehen oder wen sollen wir treffen? Sprich kurz eine Wunschliste ein.',
       facts:['FAFGA meets future: 20.–22.9.2026, Messe Innsbruck','Kategorien laut Veranstalter u. a.: Nahrungsmittel/Getränke, Hotelausstattung, KI, Recruiting','Quelle: fafga.at'],thanks:'Deine Wunschliste geht mit auf die Messe. Danke!',
       options:[O('voice','🎤 Wunschliste einsprechen (Demo)',['wunsch','ja','ok'],'accepted',{follow:{ask:'Sprich kurz ein – ich gebe es an Maria weiter. 🎤',media:VOI('0:10','„Ich möchte mit regionalen Lieferanten sprechen und mir neue Ideen für vegetarische Gerichte anschauen."'),res:{kitchen:'regionale Lieferanten und neue Ideen für vegetarische Gerichte'}},reply:'Danke Marco! Die Wunschliste geht mit auf die Messe. 🥕'}),O('no','❌ Nicht dabei',['nicht','nein'],'declined',{reply:'Kein Problem, danke! 👍'})]},
     {id:'ivana',who:'ivana',icon:'🧹',label:'Messe-Wunschliste Hotelausstattung (Sprachnachricht)',msg:'🏢 Hallo Ivana, Maria besucht die FAFGA in Innsbruck (20.–22.9.). „Hotelausstattung" ist eine der Kategorien. Was würde dir die Arbeit im Housekeeping erleichtern? Sprich kurz eine Wunschliste ein.',
       facts:['FAFGA meets future: 20.–22.9.2026, Messe Innsbruck','Kategorie laut Veranstalter: Hotelausstattung','Quelle: fafga.at'],thanks:'Dein Wunsch geht mit auf die Messe. Danke!',
-      options:[O('voice','🎤 Wunschliste einsprechen (Demo)',['wunsch','ja','ok'],'accepted',{follow:{ask:'Sprich kurz ein – ich gebe es an Maria weiter. 🎤',media:VOI('0:08','„Ein leichterer Wäschewagen und einen leisen Staubsauger für die Etage."'),res:{housekeeping:'leichtere Wäschewagen und leise Staubsauger'}},reply:'Danke Ivana! Das ist eine tolle Idee für die Messe. 🧹'}),O('no','❌ Nichts dabei',['nicht','nein'],'declined',{reply:'Kein Problem, danke! 👍'})]},
-    {id:'sabine',who:'sabine',icon:'🏐',label:'KitzBeach: Infos für Gäste bereithalten',msg:'🏐 Hallo Sabine, vom 10. bis 13. September findet KitzBeach im Tennisstadion Kitzbühel statt (Beachvolleyball-Staatsmeisterschaften). Gäste werden vorher danach fragen. Laut Veranstalter: Tickets online über kitzbeach.at und Kitzbühel Tourismus; für Ticketbesitzer gibt es einen kostenlosen Parkplatz beim Areal; vom Bahnhof Kitzbühel sind es ca. 20 Gehminuten. Kannst du diese Infos an der Rezeption bereithalten?',
-      facts:['KitzBeach 2026: 10.–13.9., Tennisstadion Kitzbühel','Tickets online: kitzbeach.at, Kitzbühel Tourismus','Kostenloser Parkplatz für Ticketbesitzer beim Areal; ca. 20 Gehminuten vom Bahnhof Kitzbühel','Quelle: kitzbuehel.com'],thanks:'Deine Infos an der Rezeption helfen den Gästen sehr. Danke!',
-      options:[O('yes','✅ Liegt bereit',['ja','bereit','ok'],'done',{res:{kitzInfo:true},reply:'Danke Sabine! Ich erwähne im Post, dass die Rezeption weiterhilft. 🏐'}),O('q','❓ Ich brauche mehr Infos',['infos','frage'],'help',{reply:'Alles klar, ich sage Maria Bescheid.',notify:'🙋 Sabine braucht mehr Infos zu KitzBeach (Tickets/Anreise) für die Rezeption.'})]},
+      options:[O('voice','🎤 Wunschliste einsprechen (Demo)',['wunsch','ja','ok'],'accepted',{follow:{ask:'Sprich kurz ein – ich gebe es an Maria weiter. 🎤',media:VOI('0:08','„Ein leichterer Wäschewagen und einen leisen Staubsauger für die Etage."'),res:{housekeeping:'leichtere Wäschewagen und leise Staubsauger'}},reply:'Danke Ivana! Das ist eine tolle Idee für die Messe. 🧹'}),O('no','❌ Nichts dabei',['nicht','nein'],'declined',{reply:'Kein Problem, danke! 👍'})]}
+  ],
+  final:({res})=>({intro:'Perfekt – so sieht der Beitrag aus:',cards:[{title:'Post/Story: Team auf der FAFGA',text:'Wir sind auf der FAFGA meets future in Innsbruck (20.–22.9., Messe Innsbruck)! 🤝\n\nKI, Digitalisierung, Recruiting, Hotelausstattung – wir schauen uns Neuheiten an und bringen Ideen für unsere Gäste und unser Team mit.'+(res.kitchen?'\nFür die Küche: '+res.kitchen+'.':'')+(res.housekeeping?'\nFürs Housekeeping: '+res.housekeeping+'.':'')+'\n\nWer uns auf der Messe treffen möchte: schreibt uns!\n\n#fafga #fafga26 #hotellerie #gastronomie'}],item:{title:'Veranstaltungshinweis: FAFGA',channels:['Instagram','Story','LinkedIn']},minutes:15,when:'Ich poste den Messe-Beitrag am 18.9. um 18:00, zwei Tage vor Messebeginn.'})};
+
+const PLAN_EVENT_KIDU={icon:'🤖',short:'Veranstaltungshinweis KIDU-Buildathon',endText:'Alles klar, ich melde mich bei der nächsten Veranstaltung wieder. Das Team wurde informiert.',
+  signals:['🎪 Signal: Veranstaltung erkannt – KIDU × FAFGA KI-Buildathon (Veranstalterseite kidu.at)','🧠 Einordnung: Weiterbildungs-Event für das Team (Lehrlinge ab 16), gut fürs Recruiting','🔎 Fakten-Check: Termin, Ort & Teilnahmebedingungen laut Veranstalter · Einverständnis bei Minderjährigen beim Veranstalter prüfen','🧠 Chance „Veranstaltungshinweis KIDU-Buildathon" · Score 66 → Digest'],
+  facts:['KIDU × FAFGA KI-Buildathon: 20.9., Messe Innsbruck (Quelle: kidu.at)'],
+  overview:{subject:'🤖 KIDU × FAFGA KI-Buildathon, 20.9. in Innsbruck – Veranstaltungshinweis',
+    text:'🤖 Am 20. September findet der KIDU × FAFGA KI-Buildathon in der Messe Innsbruck statt (kostenlos, ab 16 Jahren). Ich habe Lena angeschrieben, ob sie mitmachen möchte:',
+    mail:{facts:['KIDU × FAFGA KI-Buildathon: 20.9., Messe Innsbruck · 100 Plätze, ab 16 Jahren, kostenlos, keine Programmierkenntnisse nötig · Finale ab 15:00 Uhr (Quelle: kidu.at)','Nicht bekannt, deshalb nicht erwähnt: Anmeldeschluss'],src:'Die KI nennt nur, was der Veranstalter selbst veröffentlicht, und erfindet keine Uhrzeiten oder Preise.'}},
+  tasks:[
+    {id:'go',who:'maria',icon:'🎯',label:'Beitrag vorbereiten?',msg:'🎯 Deine Entscheidung: Wenn dein Team beim Buildathon mitmacht, zeigt das, dass Weiterbildung bei euch zum Job gehört (gut fürs Recruiting). Soll ich einen Beitrag vorbereiten?',
+      options:[O('yes','✅ Ja, vorbereiten',['ja','ok','vorbereiten'],'done'),O('later','🗓 Später',['später'],'later',{end:true})]},
     {id:'lena',who:'lena',icon:'🤖',label:'KIDU-Buildathon: Lust mitzumachen?',msg:'🤖 Hi Lena! Bei der FAFGA in Innsbruck findet am 20. September der KIDU × FAFGA KI-Buildathon statt: kostenlos, ab 16 Jahren, keine Programmierkenntnisse nötig. Man löst in einem Tag mit KI-Tools eine Aufgabe aus der Gastronomie und Hotellerie.\n\nMaria würde dich dafür freistellen. Hast du Lust?',
       facts:['KIDU × FAFGA KI-Buildathon: 20.9., Messe Innsbruck','100 Plätze · ab 16 Jahren · kostenlos · keine Programmierkenntnisse nötig','Finale ab 15:00 Uhr','Quelle: kidu.at'],note:'Teilnahmebedingungen bitte beim Veranstalter prüfen (z. B. Einverständnis bei Minderjährigen).',
       options:[O('yes','✅ Ja, ich möchte!',['ja','möchte','lust'],'accepted',{res:{lena:true},reply:'Super! 🎉 Ich sage Maria Bescheid. Bitte kläre mit ihr die Freistellung.',notify:'🙋 Lena möchte beim KIDU × FAFGA KI-Buildathon mitmachen (kostenlos, ab 16). Bitte Freistellung klären und Teilnahmebedingungen beim Veranstalter prüfen (Einverständnis bei Minderjährigen).'}),O('more','🤔 Erzähl mir mehr',['mehr','wie'],'help',{reply:'Kurz: 1 Tag, gemischte Teams, du bringst ein Problem aus dem Alltag mit, am Ende hast du etwas Klickbares in der Hand. Mehr auf kidu.at. Sag Bescheid, wenn du mitmachen willst!',notify:'ℹ️ Lena überlegt noch, ob sie beim KI-Buildathon mitmacht.'}),O('no','❌ Nicht heute',['nicht','nein'],'declined',{reply:'Kein Problem, danke fürs Bescheid geben! 👍'})]}
   ],
-  final:({res,done})=>{
-    const both=res.scope==='both';
-    const cards=[{title:'Post/Story: Team auf der FAFGA',text:'Wir sind auf der FAFGA meets future in Innsbruck (20.–22.9., Messe Innsbruck)! 🤝\n\nKI, Digitalisierung, Recruiting, Hotelausstattung – wir schauen uns Neuheiten an und bringen Ideen für unsere Gäste und unser Team mit.'+(res.kitchen?'\nFür die Küche: '+res.kitchen+'.':'')+(res.housekeeping?'\nFürs Housekeeping: '+res.housekeeping+'.':'')+(res.lena?'\nUnsere Lehrlinge dürfen beim KIDU KI-Buildathon mitmachen – Weiterbildung ist bei uns Teil des Jobs.':'')+'\n\nWer uns auf der Messe treffen möchte: schreibt uns!\n\n#fafga #fafga26 #hotellerie #gastronomie'}];
-    if(both) cards.push({title:'Post: Ausflugstipp KitzBeach',text:'Tipp für alle Sportfans: Vom 10. bis 13. September findet KitzBeach im Tennisstadion Kitzbühel statt – die Beachvolleyball-Staatsmeisterschaften. 🏐\n\nAm Trachtensonntag (13.9.) gibt es Weißwurst & Breze gratis für alle in Tracht. Tickets: online über kitzbeach.at oder Kitzbühel Tourismus. Für Ticketbesitzer gibt es einen kostenlosen Parkplatz beim Areal.'+(res.kitzInfo?'\n\nFragen zur Anreise? Unsere Rezeption hilft gern.':'')+'\n\n#kitzbeach #kitzbühel #beachvolleyball'});
+  final:({res})=>{
+    const cards=[{title:'Post/Story: KI-Buildathon',text:(res.lena?'Unsere Lehrlinge dürfen beim KIDU × FAFGA KI-Buildathon mitmachen – Weiterbildung ist bei uns Teil des Jobs. 🤖':'Am 20. September findet der KIDU × FAFGA KI-Buildathon in Innsbruck statt – kostenlos, ab 16 Jahren, ohne Programmierkenntnisse. 🤖')+'\n\nEin Tag, gemischte Teams, eine Aufgabe aus Gastronomie und Hotellerie – gelöst mit KI-Tools.\n\n#kidu #fafga26 #buildathon #lehrling'}];
     if(res.lena) cards.push({title:'Hinweis Einverständnis',text:'Lena steht im Einverständnis-Tresor auf „ausstehend" (Eltern-OK fehlt). Deshalb steht im Text nur „unsere Lehrlinge" – Name und Foto erst nach Freigabe.'});
-    return {intro:'Perfekt – so sehen die Beiträge aus:',cards,item:{title:'Veranstaltungshinweise: FAFGA · KIDU'+(both?' · KitzBeach':''),channels:['Instagram','Story','LinkedIn']},minutes:25,when:(both?'Ich poste den KitzBeach-Tipp am 8.9. (2 Tage vorher) und den Messe-Beitrag am 18.9. – jeweils um 18:00.':'Ich poste den Messe-Beitrag am 18.9. um 18:00, zwei Tage vor Messebeginn.')};
+    return {intro:'Perfekt – so sieht der Beitrag aus:',cards,item:{title:'Veranstaltungshinweis: KIDU-Buildathon',channels:['Instagram','Story','LinkedIn']},minutes:15,when:'Ich poste den Beitrag am 18.9. um 18:00, zwei Tage vorher.'};
   }};
 
 /* ---------- 5. Regenwoche ---------- */
@@ -478,7 +500,7 @@ const PLAN_BEWERTUNG={icon:'⭐',short:'Neue Bewertung',
   ],
   final:()=>({intro:'Zweite Sache: Anna hat gestern 5⭐ gegeben. Das ist Gold fürs Recruiting und für Gäste – als Post? (Zitat mit Vornamen – bitte kurz bestätigen, dass das für euch passt):',cards:[{title:'Karussell: Gästestimme',text:'„Das Team war unglaublich herzlich." – Anna, Gast\n\nDanke, Anna! Diese Worte sind für uns der schönste Lohn. Wer Teil dieses Teams werden möchte: Jobs im Highlight.'}],item:{title:'Gästestimme: Anna (5⭐)',channels:['Instagram','Facebook']},minutes:10,when:'Ich poste morgen 12:00.'})};
 
-const sc_schnee=sc_team(PLAN_SCHNEE), sc_wochenende=sc_team(PLAN_WOCHENENDE), sc_eroeffnung=sc_team(PLAN_EROEFFNUNG), sc_event=sc_team(PLAN_EVENT), sc_regen=sc_team(PLAN_REGEN), sc_anlass=sc_team(PLAN_ANLASS), sc_sturm=sc_team(PLAN_STURM), sc_konkurrenz=sc_team(PLAN_KONKURRENZ), sc_bewertung=sc_team(PLAN_BEWERTUNG);
+const sc_schnee=sc_team(PLAN_SCHNEE), sc_wochenende=sc_team(PLAN_WOCHENENDE), sc_eroeffnung=sc_team(PLAN_EROEFFNUNG), sc_event_kitz=sc_team(PLAN_EVENT_KITZ), sc_event_fafga=sc_team(PLAN_EVENT_FAFGA), sc_event_kidu=sc_team(PLAN_EVENT_KIDU), sc_regen=sc_team(PLAN_REGEN), sc_anlass=sc_team(PLAN_ANLASS), sc_sturm=sc_team(PLAN_STURM), sc_konkurrenz=sc_team(PLAN_KONKURRENZ), sc_bewertung=sc_team(PLAN_BEWERTUNG);
 
 /* ============================== SZENARIEN: ANDERE FEATURES (Beispiele) ============================== */
 const TG = {
@@ -586,7 +608,9 @@ const SC = [
  {id:'schnee', persp:'maria', cast:TEAM_CAST, icon:'❄️', title:'Es hat geschneit', sub:'Neuschnee → Aufgaben für das ganze Team, je nach Rolle', grp:'Aktuelle Geschehnisse', clock:'07:40', run:sc_schnee, delivery:'push', trig:'Neuschnee ≥ 5 cm (Wetterdienst)', aud:'Gäste', subject:'❄️ 8 cm Neuschnee – Postkartenmotiv & Aufgaben fürs Team'},
  {id:'wochenende', persp:'maria', cast:TEAM_CAST, icon:'☀️', title:'Schönes Wochenende', sub:'Schönwetter + freie Zimmer → Buchungen · Aufgaben je Rolle', grp:'Aktuelle Geschehnisse', clock:'07:30', run:sc_wochenende, delivery:'push', trig:'Schönwetter-Serie + Belegungslücke (Signal-Kombination)', aud:'Gäste', subject:'☀️ Kaiserwetter am Wochenende – und 9 Zimmer sind noch frei'},
  {id:'eroeffnung', persp:'maria', cast:TEAM_CAST, icon:'🆕', title:'Neueröffnung in der Region', sub:'Neue Bahn/Café → Insider-Tipp · Aufgaben je Rolle', grp:'Aktuelle Geschehnisse', clock:'07:30', run:sc_eroeffnung, delivery:'digest', trig:'Neuer Eintrag im Tourismusverband-Feed (KI-Extraktion)', aud:'Gäste', subject:'🆕 Neu in der Region: Gondelbahn „Almblick" eröffnet am Samstag'},
- {id:'event', persp:'maria', cast:TEAM_CAST, icon:'🎪', title:'Veranstaltungshinweise', sub:'FAFGA, KIDU-Buildathon, KitzBeach · Aufgaben je Rolle', grp:'Aktuelle Geschehnisse', clock:'07:30', run:sc_event, delivery:'digest', trig:'Events im Umkreis (Veranstalter- und Verbandsseiten)', aud:'Gäste + Team', subject:'🎪 FAFGA, KI-Buildathon & KitzBeach – Veranstaltungshinweise für dein Team'},
+ {id:'event-kitz', persp:'maria', cast:['maria','sabine'], icon:'🏐', title:'Veranstaltungshinweis: KitzBeach', sub:'Beachvolleyball 10.–13.9. · Aufgabe für die Rezeption', grp:'Aktuelle Geschehnisse', clock:'07:30', run:sc_event_kitz, delivery:'digest', trig:'Neue Veranstaltung im Umkreis (Verbandsseite kitzbuehel.com)', aud:'Gäste', subject:'🏐 KitzBeach, 10.–13.9. in Kitzbühel – Veranstaltungshinweis'},
+ {id:'event-fafga', persp:'maria', cast:['maria','marco','ivana'], icon:'🏢', title:'Veranstaltungshinweis: FAFGA', sub:'Fachmesse Innsbruck 20.–22.9. · Aufgaben je Rolle', grp:'Aktuelle Geschehnisse', clock:'07:30', run:sc_event_fafga, delivery:'digest', trig:'Neue Veranstaltung im Umkreis (Veranstalterseite fafga.at)', aud:'Team', subject:'🏢 FAFGA meets future, 20.–22.9. in Innsbruck – Veranstaltungshinweis'},
+ {id:'event-kidu', persp:'maria', cast:['maria','lena'], icon:'🤖', title:'Veranstaltungshinweis: KIDU-Buildathon', sub:'KI-Buildathon 20.9. · Aufgabe für Lehrling', grp:'Aktuelle Geschehnisse', clock:'07:30', run:sc_event_kidu, delivery:'digest', trig:'Neue Veranstaltung im Umkreis (Veranstalterseite kidu.at)', aud:'Team', subject:'🤖 KIDU × FAFGA KI-Buildathon, 20.9. in Innsbruck – Veranstaltungshinweis'},
  {id:'regen', persp:'maria', cast:TEAM_CAST, icon:'🌧️', title:'Regenwoche', sub:'Indoor-Tipps + Team-Drehtag · Aufgaben je Rolle', grp:'Aktuelle Geschehnisse', clock:'07:30', run:sc_regen, delivery:'push', trig:'≥ 2 Regentage + offene Stelle (Signal-Kombination)', aud:'Gäste + Team', subject:'🌧 Drei Regentage – Indoor-Tipps und ein Drehtag fürs Team?'},
  {id:'anlass', persp:'maria', cast:TEAM_CAST, icon:'📅', title:'Anlass in Sicht (Advent)', sub:'Kalender + Belegung → Countdown-Serie · Aufgaben je Rolle', grp:'Aktuelle Geschehnisse', clock:'07:30', run:sc_anlass, delivery:'digest', trig:'Kalender-Anlass innerhalb Vorlauf + Belegung', aud:'Gäste', subject:()=>'📅 1. Advent in '+Math.max(1,Math.round((new Date('2026-11-29')-new Date())/6048e5))+' Wochen – Countdown vorbereiten'},
  {id:'sturm', persp:'maria', cast:TEAM_CAST, icon:'💨', title:'Sturmwarnung', sub:'Sicherheitshinweis · Aufgaben je Rolle', grp:'Aktuelle Geschehnisse', clock:'16:10', run:sc_sturm, delivery:'push', trig:'Böen ≥ 70 km/h (Pflicht-Hinweis)', aud:'Gäste', subject:'💨 Sturmwarnung morgen – Hinweis für Gäste'},
@@ -603,9 +627,10 @@ const SC = [
 
 /* ============================== RENDER ============================== */
 function renderSC(){
-  const main=SC.filter(s=>s.grp==='Aktuelle Geschehnisse'), other=SC.filter(s=>s.grp!=='Aktuelle Geschehnisse');
+  // Alle Szenarien in einer Liste, "Foto → Post" steht ganz oben.
+  const list=[...SC.filter(s=>s.id==='zimmer'), ...SC.filter(s=>s.id!=='zimmer')];
   const btn=s=>`<button class="sc ${state.lastSc===s.id?'active':''}" data-sc="${s.id}"><span class="ic">${s.icon}</span><span><b>${esc(s.title)}</b><span class="s">${esc(s.sub)}</span></span></button>`;
-  $('#sclist').innerHTML = `<div class="grp">Aktuelle Geschehnisse (Intelligence)</div>${main.map(btn).join('')}<details class="more" ${other.some(s=>s.id===state.lastSc)?'open':''}><summary>Andere Features (Beispiele)</summary>${other.map(btn).join('')}</details>`;
+  $('#sclist').innerHTML = list.map(btn).join('');
 }
 function renderScinfo(){
   const s=SC.find(x=>x.id===state.lastSc), el=$('#scinfo');
@@ -724,7 +749,6 @@ document.addEventListener('click', e=>{
 });
 $('#txt').addEventListener('keydown',e=>{ if(e.key==='Enter'){ const v=e.target.value; e.target.value=''; onSend(v); } });
 $('#mtxt').addEventListener('keydown',e=>{ if(e.key==='Enter'){ const v=e.target.value; e.target.value=''; onSend(v); } });
-$('#fast').addEventListener('change',e=>{ state.speed=e.target.checked?0.3:1; });
 function togglePop(){
   const pop=$('#pop'); if(!pop.hidden){ pop.hidden=true; return; }
   const items=SC.filter(s=>s.user && s.persp===state.persp);
