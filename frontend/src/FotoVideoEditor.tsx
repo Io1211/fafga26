@@ -20,8 +20,36 @@ import * as editor from "../../foto-video-editor/editor.js";
 import { alsBild } from "../../foto-video-editor/image.js";
 import {
   state, laden, uebernehmeHaus, uebernehmeCopy, setzePost, kartenAus, setzeKiHandler,
+  motivHinzu, setzeMotiv,
 } from "../../foto-video-editor/zustand.js";
 import "../../foto-video-editor/editor.css";
+
+// Standardmotive, die im Studio immer zur Auswahl stehen. Vite hängt sie
+// mit Hash unter /assets/ ein — das ist auch auf Vercel erreichbar.
+import motivBuehne from "../../foto-video-editor/assets/buildathon-buehne.jpg";
+import motivStory from "../../foto-video-editor/assets/buildathon-story.jpg";
+import motivKiduD from "../../foto-video-editor/assets/kidu-d.jpg";
+
+const STANDARDMOTIVE = [
+  { src: motivBuehne, label: "Buildathon · Bühne in der Messehalle" },
+  { src: motivStory, label: "Buildathon · Story „Heute wird gebaut“" },
+  { src: motivKiduD, label: "KIDU · D-Zeichen" },
+];
+
+/**
+ * Die Standardmotive in den Zustand legen, falls noch keine da sind.
+ * Der Blob wird nachgeladen, damit auch die KI mit ihnen arbeiten kann —
+ * ohne Blob gelten sie im Editor als reine Beispielbilder.
+ */
+function standardmotiveEinlegen() {
+  if (state.motive.length) return;
+  STANDARDMOTIVE.forEach(m => motivHinzu({ ...m }));
+  setzeMotiv(0);
+  state.motive.forEach(m => {
+    fetch(m.src).then(r => (r.ok ? r.blob() : null)).then(b => { if (b) m.blob = b; })
+      .catch(() => { /* dann bleibt es ein Beispielbild */ });
+  });
+}
 
 interface Props {
   /** Das Haus aus GET /api/house. Wird übernommen, sobald es da ist. */
@@ -42,6 +70,7 @@ export default function FotoVideoEditor({ house, copy }: Props) {
     gebaut.current = true;
 
     laden();                       // gesicherte Vorlage, Texte und Feineinstellungen
+    standardmotiveEinlegen();      // die drei Default-Bilder zur Auswahl
 
     /* Die KI hängt am Backend, der Editor weiß davon nichts. Er bekommt nur
        diese Funktion — ist keine da, bleibt sein Anweisungsfeld verborgen.
