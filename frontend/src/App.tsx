@@ -13,7 +13,7 @@ const NAV: { id: View; label: string; icon: JSX.Element; badge?: string }[] = [
   { id: "uebersicht", label: "Übersicht", icon: <Grid /> },
   { id: "assistent", label: "Ideen-Assistent", icon: <Cam /> },
   { id: "studio", label: "Studio", icon: <Doc /> },
-  { id: "ideen", label: "Ideen", icon: <Spark /> },
+  { id: "ideen", label: "Caption-Ideen", icon: <Spark /> },
   { id: "jahreskalender", label: "Jahreskalender", icon: <Cal /> },
 ];
 
@@ -77,7 +77,7 @@ export default function App() {
       <main className="main">
         <div className="card top">
           <div>
-            <h1>{view === "studio" ? "Studio" : view === "ideen" ? "Ideen"
+            <h1>{view === "studio" ? "Studio" : view === "ideen" ? "Caption-Ideen"
               : view === "jahreskalender" ? "Jahreskalender"
               : view === "assistent" ? "Ideen-Assistent" : "Operations-Cockpit"}</h1>
             <div className="sub">{heute} · {house?.name ?? ""}</div>
