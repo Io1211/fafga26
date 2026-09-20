@@ -46,13 +46,6 @@ function markup() {
 export function bedienungMarkup() {
   return `
   <div class="block">
-    <h3>Format</h3>
-    <div class="seg" id="edSegFormat" role="group" aria-label="Format">
-      <button data-v="story" aria-pressed="true">Story 9:16</button>
-      <button data-v="post" aria-pressed="false">Beitrag 4:5</button>
-    </div>
-  </div>
-  <div class="block">
     <h3>Motiv</h3>
     <div class="motive" id="edMotive"></div>
     <div class="drop" id="edDrop">Fotos hierher ziehen oder klicken</div>
@@ -60,6 +53,14 @@ export function bedienungMarkup() {
       <button class="btn" id="edOrdner">Ganzen Ordner wählen</button>
       <button class="btn" id="edLeeren" hidden>Eigene entfernen</button>
     </div>
+
+  <div class="block">
+    <h3>Format</h3>
+    <div class="seg" id="edSegFormat" role="group" aria-label="Format">
+      <button data-v="story" aria-pressed="true">Story 9:16</button>
+      <button data-v="post" aria-pressed="false">Beitrag 4:5</button>
+    </div>
+  </div>
     <input type="file" id="edOrdnerFile" accept="image/*" multiple webkitdirectory directory hidden>
   </div>
 
@@ -302,8 +303,10 @@ async function schriftenLaden() {
 export function aufbauen(buehne, bedienung) {
   // Kapselklasse selbst setzen: die Gastseite muss im Markup nichts
   // vorbereiten, und ohne sie greift kein einziger Stil des Editors.
-  buehne.classList.add("fve");
-  bedienung.classList.add("fve");
+  // `stage` muss der Editor selbst setzen: eingebettet in React bekommt er
+  // nur ein leeres <div>, und ohne die Klasse greift das Festpinnen nicht.
+  buehne.classList.add("fve", "stage");
+  bedienung.classList.add("fve", "panel");
   // Ersetzt auch den Platzhalter, den das Dashboard vorhält.
   buehne.innerHTML = markup();
   bedienung.innerHTML = bedienungMarkup();

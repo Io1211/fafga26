@@ -1,5 +1,8 @@
 import { useRef, useState } from "react";
 import { api, AssistentPost, Prioritaet } from "./api";
+// Der Editor hält seinen Zustand als Modul. Deshalb genügt es, hier
+// hineinzuschreiben — das Studio liest beim Öffnen genau das.
+import { setzeHaus, motivHinzu } from "../../foto-video-editor/zustand.js";
 
 const PRIORITAETEN: { id: Prioritaet; label: string; hint: string }[] = [
   { id: "zimmer", label: "Zimmer", hint: "Auslastung fürs Wochenende zeigen" },
@@ -25,12 +28,18 @@ export default function Assistent() {
   const [laedt, setLaedt] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [ueber, setUeber] = useState(false);
+  const [logo, setLogo] = useState<string | null>(null);
+  const [logoName, setLogoName] = useState<string>("");
+  const [uebernommen, setUebernommen] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const kamera = useRef<HTMLInputElement>(null);
+  const logoInput = useRef<HTMLInputElement>(null);
+  const foto = useRef<File | null>(null);
 
   async function nimm(f: File | undefined, p: Prioritaet | null) {
     if (!f || !p) return;
-    setErgebnis(null); setFehler(null);
+    setErgebnis(null); setFehler(null); setUebernommen(false);
+    foto.current = f;
     setVorschau(URL.createObjectURL(f));
     setLaedt(true);
     try { setErgebnis(await api.assistent(f, p)); }
@@ -85,7 +94,24 @@ export default function Assistent() {
                 <button className="btn" onClick={() => kamera.current?.click()} disabled={laedt}>
                   Foto aufnehmen
                 </button>
+                <button className="btn" onClick={() => logoInput.current?.click()} disabled={laedt}>
+                  {logo ? "Anderes Logo" : "Logo wählen"}
+                </button>
+                {logo && (
+                  <span style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+                    <img src={logo} alt="" style={{ height: 22, width: "auto" }} />
+                    {logoName}
+                  </span>
+                )}
               </div>
+              <input ref={logoInput} type="file" accept="image/*" hidden
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (!f) return;
+                  setLogo(URL.createObjectURL(f));
+                  setLogoName(f.name);
+                  setUebernommen(false);
+                }} />
               <input ref={input} type="file" accept="image/*" hidden
                 onChange={(e) => nimm(e.target.files?.[0], prioritaet)} />
               <input ref={kamera} type="file" accept="image/*" capture="environment" hidden
@@ -98,6 +124,32 @@ export default function Assistent() {
 
         {ergebnis && (
           <>
+            <div className="card" style={{ marginTop: 14, display: "flex",
+                 alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <div style={{ minWidth: 0 }}>
+                <b>Passt das?</b>
+                <div className="sub" style={{ fontSize: 12 }}>
+                  Foto{logo ? " und Logo" : ""} ins Studio übernehmen und dort fertig gestalten.
+                </div>
+              </div>
+              <div className="spacer" style={{ flex: 1 }} />
+              <button
+                className="btn primary"
+                disabled={uebernommen}
+                onClick={() => {
+                  const f = foto.current;
+                  if (f) {
+                    const url = URL.createObjectURL(f);
+                    motivHinzu({ src: url, datei: url, label: f.name, blob: f });
+                  }
+                  if (logo) setzeHaus({ logo, logoFarben: [] });
+                  setUebernommen(true);
+                }}
+              >
+                {uebernommen ? "Übernommen — links auf Studio" : "Ins Studio übernehmen"}
+              </button>
+            </div>
+
             <div className="card empfehlung">
               <div className="eyebrow">Empfehlung · {ergebnis.empfehlung.anlass}</div>
               <p className="empfehlung-text">„{ergebnis.empfehlung.text}“</p>
