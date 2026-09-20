@@ -22,3 +22,20 @@ export const Facebook = () => <svg {...s}><circle cx="12" cy="12" r="10"/><path 
 export const LinkedIn = () => <svg {...s}><rect x="2.5" y="2.5" width="19" height="19" rx="3"/><path d="M7.2 10.2v6.8M7.2 7.3v.02M11 17V13a2.3 2.3 0 0 1 4.6 0v4M11 12.6V17"/></svg>;
 export const Star = () => <svg {...s}><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.9-6.2-3.3-6.2 3.3 1.2-6.9-5-4.9 6.9-1z"/></svg>;
 export const Reply = () => <svg {...s}><path d="M9 17 4 12l5-5"/><path d="M4 12h10a6 6 0 0 1 6 6v1"/></svg>;
+
+/** Postify-Bildmarke, inline: braucht keine externe Datei und funktioniert
+ *  auch dort, wo unbekannte Pfade auf index.html umgeleitet werden (Vercel). */
+export const Logo = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 72 88" role="img" aria-label="Postify">
+    <defs>
+      <linearGradient id="pf-stem" gradientUnits="userSpaceOnUse" x1="0" y1="8" x2="0" y2="80">
+        <stop offset="0" stopColor="#cf2d57"/><stop offset=".5" stopColor="#b52a50"/><stop offset="1" stopColor="#5e1830"/>
+      </linearGradient>
+      <linearGradient id="pf-bowl" gradientUnits="userSpaceOnUse" x1="14" y1="0" x2="66" y2="0">
+        <stop offset="0" stopColor="#1c2b66"/><stop offset=".42" stopColor="#2a63f0"/><stop offset="1" stopColor="#2f78ff"/>
+      </linearGradient>
+    </defs>
+    <rect x="6" y="8" width="24" height="72" rx="12" fill="url(#pf-stem)"/>
+    <path d="M22 16H44A14 14 0 0 1 44 44H22" fill="none" stroke="url(#pf-bowl)" strokeWidth="16" strokeLinecap="round"/>
+  </svg>
+);

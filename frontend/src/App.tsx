@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, House } from "./api";
-import { Cal, Cam, Chart, Doc, Gear, Grid, Haus, Mail, Search, Send, Spark } from "./icons";
+import { Cal, Cam, Chart, Doc, Gear, Grid, Haus, Logo, Mail, Search, Send, Spark } from "./icons";
 import Uebersicht from "./Uebersicht";
 import FotoVideoEditor from "./FotoVideoEditor";
 import Ideen from "./Ideen";
@@ -45,7 +45,7 @@ export default function App() {
     <div className="shell">
       <aside className="side">
         <div className="brand">
-          <img className="mark" src="/logo-mark.svg" alt="" />
+          <Logo className="mark" />
           <div>
             <b>Postify</b>
             <span>Idee, Foto, Post</span>
