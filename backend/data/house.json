@@ -1,0 +1,17 @@
+{
+  "name": "Aurora Lodge",
+  "ort": "Salzburg",
+  "art": "Hotel & Restaurant",
+  "farbe": "#0E7C66",
+  "logo": null,
+  "belege": [
+    "Der Grossvater hat das Haus 1934 gebaut.",
+    "Das Fleisch kommt vom Nachbarhof, 400 Meter Luftlinie.",
+    "Marlies steht seit 19 Jahren in derselben Kueche.",
+    "Die Sonnenterrasse ist ab halb acht in der Frueh offen.",
+    "Dienstplaene stehen vier Wochen im Voraus fest."
+  ],
+  "sperrliste": ["Haubenkueche", "Bio-zertifiziert", "5 Sterne", "einzigartig"],
+  "cta_gast": "Tisch gibt es unter der Nummer im Profil.",
+  "cta_team": "Melde dich einfach - wir zeigen dir das Haus."
+}
