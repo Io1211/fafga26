@@ -1,4 +1,4 @@
-# Hauspost — Social-Media-Assistent für Hotellerie und Gastronomie
+# Postify — Social-Media-Assistent für Hotellerie und Gastronomie
 
 KI-Buildathon @ FAFGA 2026 · Case Study 06 — „Sichtbar werden: Gäste und
 Mitarbeiter finden, ohne Agentur"

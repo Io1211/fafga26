@@ -1,4 +1,4 @@
-# HAUSPOST — Konzept
+# POSTIFY — Konzept
 
 **KI-Buildathon @ FAFGA 2026 · Case Study 06 — „Sichtbar werden: Gäste und Mitarbeiter finden, ohne Agentur"**
 Prototyp: https://claude.ai/artifact/X3eLCgn1FWohpg9Kj9Az7W
@@ -7,7 +7,7 @@ Prototyp: https://claude.ai/artifact/X3eLCgn1FWohpg9Kj9Az7W
 
 ## Kurzbeschreibung (für die Jury-Vorauswahl, 13:30)
 
-> Hauspost ist ein Social-Media-Assistent für kleine Betriebe. Der Betrieb wird **einmal** eingerichtet —
+> Postify ist ein Social-Media-Assistent für kleine Betriebe. Der Betrieb wird **einmal** eingerichtet —
 > Hausfarbe, Logo und die echten Sätze, die er über sich sagen darf. Danach: Foto rein, ein Klick auf
 > *Für Gäste* oder *Für Mitarbeiter*, und es fällt ein fertiger Post im Hausstil heraus — Grafik mit
 > eingebranntem Overlay, Caption, Hashtags und eine getimte Untertitel-Spur fürs Story-Video.
@@ -59,7 +59,7 @@ Betrieb schreibt.
 Dasselbe Foto erzeugt auf Klick einen **Gäste-Post** oder einen **Mitarbeiter-Post**. Andere Hooks,
 andere Sprache, andere Hashtags, anderer CTA — gleiches Material.
 
-Das ist Case 06 wörtlich beantwortet und der Punkt, an dem sich Hauspost von jedem Post-Generator trennt.
+Das ist Case 06 wörtlich beantwortet und der Punkt, an dem sich Postify von jedem Post-Generator trennt.
 
 ---
 
@@ -142,6 +142,6 @@ antwortet, merkt es niemand — auf „Anderes Muster" klicken und weitermachen.
 Der Ablauf ist kein Entwurf am Reißbrett. Er ist aus der laufenden Betreuung von
 **Huter Haustechnik** (Matrei am Brenner) abgezogen — Basisstrategie als Betriebs-Gedächtnis,
 Hook → Inhalt → CTA, Ankersätze für Kurzvarianten, die Untertitel- und Overlay-Regeln aus der
-Reel-Produktion. Hauspost ist dieser Prozess als Werkzeug, das ein Betrieb selbst bedienen kann.
+Reel-Produktion. Postify ist dieser Prozess als Werkzeug, das ein Betrieb selbst bedienen kann.
 
 *Elias Lechner · @eliaslechnerphoto*

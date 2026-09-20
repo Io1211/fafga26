@@ -2,7 +2,9 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<title>Hauspost</title>
+<title>Postify</title>
+<link rel="icon" href="brand/logo-mark.svg" type="image/svg+xml">
+<link rel="stylesheet" href="brand/brand.css">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
@@ -64,6 +66,7 @@ button.ghost:hover{color:var(--fg)}
 .intro{min-height:100%;display:flex;flex-direction:column;align-items:center;padding:0 16px 56px}
 .introbar{width:100%;max-width:840px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:20px 0 26px}
 .brand{display:flex;align-items:baseline;gap:11px;margin-right:auto}
+.brand .mark{width:24px;height:29px;align-self:center;flex-shrink:0}
 .brand .word{font-family:var(--display);font-weight:800;font-size:25px;letter-spacing:-.025em;
   font-variation-settings:"SOFT" 40,"WONK" 1;color:var(--fg)}
 .brand .tag{font-size:11px;color:var(--fg-muted);letter-spacing:.05em;text-transform:uppercase}
@@ -230,7 +233,7 @@ if (window.location.hash === "#studio" || window.location.search.includes("from=
 <div class="intro" id="intro">
   <div class="introbar">
     <div class="brand">
-      <span class="word">Hauspost</span>
+      <img class="mark" src="brand/logo-mark.svg" alt=""><span class="word pf-word">Post<span class="pf-i">ı</span>fy</span>
       <span class="tag">Der Social-Media-Assistent fürs eigene Haus</span>
     </div>
     <div class="dots" id="dots" aria-hidden="true"></div>
@@ -250,7 +253,7 @@ if (window.location.hash === "#studio" || window.location.search.includes("from=
     <div class="peek">
       <canvas id="peekCanvas" width="1080" height="1920" aria-label="Beispiel-Post"></canvas>
       <div class="txt">
-        <p class="lede" style="font-size:14px"><strong>Hauspost dreht das um.</strong> Wir richten Ihren Betrieb
+        <p class="lede" style="font-size:14px"><strong>Postify dreht das um.</strong> Wir richten Ihren Betrieb
         jetzt <strong>einmal</strong> ein — das dauert etwa fünf Minuten. Danach kostet ein Post drei Klicks:
         Foto wählen, Zielgruppe wählen, fertig.</p>
         <p class="hint">Alles bleibt auf diesem Gerät. Es wird nichts hochgeladen und kein Konto gebraucht.</p>
@@ -421,7 +424,7 @@ if (window.location.hash === "#studio" || window.location.search.includes("from=
 <div id="studio" hidden>
   <header class="topbar">
     <div class="brand">
-      <span class="word">Hauspost</span>
+      <img class="mark" src="brand/logo-mark.svg" alt=""><span class="word pf-word">Post<span class="pf-i">ı</span>fy</span>
       <span class="tag" id="topHaus"></span>
     </div>
     <span class="chip" id="chipEngine">Texte: Haus-Muster</span>
@@ -588,7 +591,7 @@ if (window.location.hash === "#studio" || window.location.search.includes("from=
 
 <script>
 /* =======================================================================
-   Hauspost — Prototyp für den KI-Buildathon @ FAFGA 2026, Case Study 06
+   Postify — Prototyp für den KI-Buildathon @ FAFGA 2026, Case Study 06
 
    Regeln aus der laufenden Reel- und Post-Produktion für Tiroler Betriebe:
    · Fotos nie beschneiden, den Rand füllt der eigene Unschärfe-Hintergrund
