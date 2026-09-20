@@ -6,15 +6,20 @@ import FotoVideoEditor from "./FotoVideoEditor";
 import Ideen from "./Ideen";
 import Jahreskalender from "./Jahreskalender";
 import Assistent from "./Assistent";
+import Kanaele from "./Kanaele";
+import Kennzahlen from "./Kennzahlen";
+import Inbox from "./Inbox";
 
-type View = "uebersicht" | "studio" | "ideen" | "jahreskalender" | "assistent";
+type View = "uebersicht" | "studio" | "ideen" | "jahreskalender" | "assistent" | "kanaele" | "kennzahlen" | "inbox";
 
 const NAV: { id: View; label: string; icon: JSX.Element; badge?: string }[] = [
   { id: "uebersicht", label: "Übersicht", icon: <Grid /> },
   { id: "assistent", label: "Ideen-Assistent", icon: <Cam /> },
   { id: "studio", label: "Studio", icon: <Doc /> },
-  { id: "ideen", label: "Ideen", icon: <Spark /> },
   { id: "jahreskalender", label: "Jahreskalender", icon: <Cal /> },
+  { id: "kanaele", label: "Kanäle", icon: <Send /> },
+  { id: "kennzahlen", label: "Kennzahlen", icon: <Chart /> },
+  { id: "inbox", label: "Inbox", icon: <Mail /> },
 ];
 
 export default function App() {
@@ -58,9 +63,6 @@ export default function App() {
               {n.badge && <span className="badge">{n.badge}</span>}
             </button>
           ))}
-          <button disabled style={{ opacity: .45 }}><Send />Kanäle</button>
-          <button disabled style={{ opacity: .45 }}><Mail />Inbox</button>
-          <button disabled style={{ opacity: .45 }}><Chart />Kennzahlen</button>
         </nav>
 
         <div className="focus">
@@ -79,7 +81,10 @@ export default function App() {
           <div>
             <h1>{view === "studio" ? "Studio" : view === "ideen" ? "Ideen"
               : view === "jahreskalender" ? "Jahreskalender"
-              : view === "assistent" ? "Ideen-Assistent" : "Operations-Cockpit"}</h1>
+              : view === "assistent" ? "Ideen-Assistent"
+              : view === "kanaele" ? "Kanäle"
+              : view === "kennzahlen" ? "Kennzahlen"
+              : view === "inbox" ? "Inbox" : "Operations-Cockpit"}</h1>
             <div className="sub">{heute} · {house?.name ?? ""}</div>
           </div>
           <div className="spacer" />
@@ -95,6 +100,9 @@ export default function App() {
         {view === "studio" && <FotoVideoEditor house={house} />}
         {view === "ideen" && <Ideen />}
         {view === "jahreskalender" && <Jahreskalender onStudio={() => setView("studio")} />}
+        {view === "kanaele" && <Kanaele />}
+        {view === "kennzahlen" && <Kennzahlen />}
+        {view === "inbox" && <Inbox />}
       </main>
     </div>
   );

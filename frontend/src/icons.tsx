@@ -17,3 +17,8 @@ export const Team = () => <svg {...s}><circle cx="9" cy="8" r="3"/><path d="M2 2
 export const Check = () => <svg {...s}><path d="m4 12 5 5L20 6"/></svg>;
 export const Plus = () => <svg {...s}><path d="M12 5v14M5 12h14"/></svg>;
 export const Cam = () => <svg {...s}><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>;
+export const Insta = () => <svg {...s}><rect x="2.5" y="2.5" width="19" height="19" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.3" cy="6.7" r=".6" fill="currentColor" stroke="none"/></svg>;
+export const Facebook = () => <svg {...s}><circle cx="12" cy="12" r="10"/><path d="M14.5 8.2h-1.4a2 2 0 0 0-2 2V13H9v3.2h2.1V21h3v-4.8h2.1l.4-3.2h-2.5v-1.9a.6.6 0 0 1 .6-.6h1.9z"/></svg>;
+export const LinkedIn = () => <svg {...s}><rect x="2.5" y="2.5" width="19" height="19" rx="3"/><path d="M7.2 10.2v6.8M7.2 7.3v.02M11 17V13a2.3 2.3 0 0 1 4.6 0v4M11 12.6V17"/></svg>;
+export const Star = () => <svg {...s}><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.9-6.2-3.3-6.2 3.3 1.2-6.9-5-4.9 6.9-1z"/></svg>;
+export const Reply = () => <svg {...s}><path d="M9 17 4 12l5-5"/><path d="M4 12h10a6 6 0 0 1 6 6v1"/></svg>;

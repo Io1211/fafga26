@@ -59,7 +59,7 @@ export default function Assistent() {
           </div>
 
           <div className="field" style={{ marginTop: 14 }}>
-            <label>Was soll der Post zeigen? (optional)</label>
+            <label>Was willst du teilen? (optional)</label>
             <textarea value={wunsch} onChange={(e) => setWunsch(e.target.value)}
               placeholder="z. B. Fokus auf die Terrasse bei Sonnenuntergang, verspielter Ton, mit Hund" />
           </div>

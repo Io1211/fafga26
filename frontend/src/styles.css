@@ -2,6 +2,7 @@
   --bg:#f2f3ef; --card:#fff; --navy:#2f4a3a; --ink:#191c19; --muted:#5d655c;
   --accent:#2f4a3a; --accent-soft:#eef2ed; --warn:#9c7636; --warn-soft:#fdf8ef;
   --line:#daded2; --ok:#3f6b4a; --bad:#a8322c; --fg-faint:#8b9289; --surface-2:#eaece5;
+  --series-1:#9c3f72; --series-2:#2a6ca8; --series-3:#1f7a54;
   --r:4px; --r-sm:4px;
   --serif:"Fraunces",Georgia,"Times New Roman",serif;
   --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
@@ -196,6 +197,41 @@ textarea{resize:vertical;min-height:90px}
 .inbox-header{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
 .inbox-platform{font-family:var(--mono);font-size:9px;color:var(--fg-faint);text-transform:uppercase}
 .inbox-preview{font-size:12px;color:var(--muted);line-height:1.5}
+
+/* ---------- Kennzahlen / Analytics ---------- */
+.kpi-spark{display:block;width:100%;height:30px;margin-top:10px}
+.chart-card{display:flex;flex-direction:column}
+.chart-legend{display:flex;gap:14px;flex-wrap:wrap}
+.legend-item{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.legend-item i{width:10px;height:10px;border-radius:3px;flex-shrink:0;display:inline-block}
+.chart-wrap{position:relative}
+.chart-tooltip{position:absolute;top:6px;transform:translateX(-50%);
+  background:var(--ink);color:#fff;border-radius:8px;padding:8px 10px;font-size:11px;
+  pointer-events:none;white-space:nowrap;box-shadow:0 4px 14px rgba(0,0,0,.18);z-index:2}
+.chart-tooltip b{display:block;font-size:11px;margin-bottom:4px;font-weight:700}
+.chart-tooltip-row{display:flex;align-items:center;gap:6px;padding:1px 0}
+.chart-tooltip-row i{width:8px;height:2px;border-radius:1px;display:inline-block;flex-shrink:0}
+.chart-tooltip-row span{color:rgba(255,255,255,.75);flex:1}
+.chart-tooltip-row b{display:inline;margin:0;font-family:var(--mono)}
+.kz-table{width:100%;border-collapse:collapse;font-size:12px}
+.kz-table th{text-align:left;font-weight:600;color:var(--muted);font-size:10px;
+  text-transform:uppercase;letter-spacing:.08em;padding:6px 10px;border-bottom:1px solid var(--line)}
+.kz-table td{padding:8px 10px;border-bottom:1px solid var(--line);color:var(--ink)}
+.kz-table tr:last-child td{border-bottom:0}
+.kz-table td:nth-child(n+4),.kz-table th:nth-child(n+4){font-family:var(--mono);text-align:right}
+
+/* ---------- Kanäle ---------- */
+.kanal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.kanal-card{display:flex;flex-direction:column;gap:12px}
+.kanal-head{display:flex;align-items:center;gap:12px}
+.kanal-head h3{font-size:15px}
+.kanal-ic{width:40px;height:40px;border-radius:10px;flex-shrink:0;
+  display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+.kanal-ic.facebook{background:var(--surface-2);color:var(--navy)}
+.kanal-ic.linkedin{background:var(--warn-soft);color:var(--warn)}
+.kanal-hinweis{margin:0;color:var(--muted);font-size:12px;flex:1}
+.kanal-card .btn{justify-content:center}
+@media(max-width:1200px){.kanal-grid{grid-template-columns:1fr}}
 
 /* Platz für den Foto- und Video-Editor in der Studio-Ansicht.
    Der Editor bringt seine eigenen Stile unter .fve mit — hier steht nur,
