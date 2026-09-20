@@ -133,7 +133,12 @@ def kennzahlen():
             {"monat": "Juni", "thema": "Sommerstart", "posts": 7, "kanaele": ["IG", "FB"]},
             {"monat": "Juli", "thema": "Genussmomente", "posts": 6, "kanaele": ["IG", "TT"]},
             {"monat": "August", "thema": "Local Stories", "posts": 5, "kanaele": ["IG", "LI"]},
-            {"monat": "September", "thema": "Erntezeit", "posts": 4, "kanaele": ["IG", "FB"], "aktiv": True},
+            {"monat": "September", "thema": "Erntezeit", "posts": 4, "kanaele": ["IG", "FB"], "aktiv": True,
+             "termine": [
+                 {"titel": "Törggelen", "datum": "12.09."},
+                 {"titel": "Messe Fafga", "datum": "19.–20.09."},
+                 {"titel": "Hochzeit", "datum": "26.09."},
+             ]},
             {"monat": "Oktober", "thema": "Herbst-Retreat", "posts": 3, "kanaele": ["IG", "TT"]},
             {"monat": "November", "thema": "Advent Teaser", "posts": 2, "kanaele": ["IG", "FB"]},
             {"monat": "Dezember", "thema": "Festtage", "posts": 4, "kanaele": ["IG", "LI"]},

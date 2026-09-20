@@ -20,7 +20,8 @@ export interface Kennzahlen {
   beispieldaten: boolean;
   kacheln: { label: string; wert: string; delta?: number; hinweis?: string }[];
   kanaele: { name: string; kuerzel: string; delta: number; anteil: number }[];
-  monate: { monat: string; thema: string; posts: number; kanaele: string[]; aktiv?: boolean }[];
+  monate: { monat: string; thema: string; posts: number; kanaele: string[]; aktiv?: boolean;
+    termine?: { titel: string; datum: string }[] }[];
 }
 export interface Signale {
   wetter: { kurz: string; tage: { datum: string; beschreibung: string; max: number; min: number }[] };
