@@ -95,6 +95,9 @@ a{color:inherit}
 .ideacard p{margin:0;color:var(--ink)}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{background:var(--accent-soft);border-radius:8px;padding:3px 9px;font-size:11px;color:var(--muted)}
+button.chip{border:1px solid transparent;cursor:pointer;font:inherit;font-size:11px}
+button.chip:hover{border-color:var(--accent)}
+button.chip[data-on="true"]{background:var(--navy);color:#fff}
 .tag{font-family:var(--mono);border-radius:99px;padding:2px 10px;font-size:10px;letter-spacing:.03em}
 .tag.gast{background:var(--accent-soft);color:var(--accent)}
 .tag.team{background:var(--warn-soft);color:var(--warn)}

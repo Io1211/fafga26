@@ -19,9 +19,17 @@ const AUSGABEN = [
 ] as const;
 type Ausgabe = (typeof AUSGABEN)[number]["id"];
 
+// Schnellwahl für die Post-Art — füllt das Freitextfeld, das darf man dann noch anpassen.
+const POST_ARTEN = [
+  "Angebot / Aktion", "Veranstaltung ankündigen", "Tagesgericht", "Neu bei uns",
+  "Hinter den Kulissen", "Team & Jobs", "Saison / Wetter", "Danke an die Gäste",
+];
+
 export default function Assistent() {
   const [prioritaet, setPrioritaet] = useState<Prioritaet | null>(null);
   const [wunsch, setWunsch] = useState("");
+  const [postArt, setPostArt] = useState("");
+  const [captionLaedt, setCaptionLaedt] = useState(false);
   const [vorschau, setVorschau] = useState<string | null>(null);
   const [ergebnis, setErgebnis] = useState<AssistentPost | null>(null);
   const [ausgabe, setAusgabe] = useState<Ausgabe>("post");
@@ -42,13 +50,22 @@ export default function Assistent() {
     foto.current = f;
     setVorschau(URL.createObjectURL(f));
     setLaedt(true);
-    try { setErgebnis(await api.assistent(f, p, wunsch)); }
+    try { setErgebnis(await api.assistent(f, p, wunsch, postArt)); }
     catch (e) { setFehler(String(e)); }
     finally { setLaedt(false); }
   }
 
+  async function captionNeu() {
+    if (!ergebnis) return;
+    setFehler(null); setCaptionLaedt(true);
+    try { setErgebnis(await api.captionNeu(ergebnis.id, postArt, wunsch)); }
+    catch (e) { setFehler(String(e)); }
+    finally { setCaptionLaedt(false); }
+  }
+
   function neuStarten() {
-    setPrioritaet(null); setWunsch(""); setVorschau(null); setErgebnis(null); setFehler(null); setAusgabe("post");
+    setPrioritaet(null); setWunsch(""); setPostArt(""); setVorschau(null);
+    setErgebnis(null); setFehler(null); setAusgabe("post");
   }
 
   return (
@@ -65,6 +82,18 @@ export default function Assistent() {
                 <span>{p.hint}</span>
               </button>
             ))}
+          </div>
+
+          <div className="field" style={{ marginTop: 14 }}>
+            <label>Was für ein Post ist das? (optional)</label>
+            <div className="chips" style={{ marginBottom: 6 }}>
+              {POST_ARTEN.map((a) => (
+                <button key={a} type="button" className="chip" data-on={postArt === a}
+                  onClick={() => setPostArt(postArt === a ? "" : a)}>{a}</button>
+              ))}
+            </div>
+            <input type="text" value={postArt} onChange={(e) => setPostArt(e.target.value)}
+              placeholder="z. B. Ankündigung unseres Weinabends am Freitag, Gäste sollen reservieren" />
           </div>
 
           <div className="field" style={{ marginTop: 14 }}>

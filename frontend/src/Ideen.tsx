@@ -25,8 +25,16 @@ const TONLAGEN = [
 
 interface Vorschlag { id: string; label: string; copy: Copy }
 
+// Schnellwahl, was für ein Post das ist — füllt das Freitextfeld,
+// das darf man dann noch genauer beschreiben.
+const POST_ARTEN = [
+  "Angebot / Aktion", "Veranstaltung ankündigen", "Tagesgericht", "Neu bei uns",
+  "Hinter den Kulissen", "Team & Jobs", "Saison / Wetter", "Danke an die Gäste",
+];
+
 export default function CaptionIdeen() {
   const [vorschlaege, setVorschlaege] = useState<Vorschlag[]>([]);
+  const [postArt, setPostArt] = useState("");
   const [laedt, setLaedt] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const [uebernommen, setUebernommen] = useState<string | null>(null);
@@ -47,10 +55,15 @@ export default function CaptionIdeen() {
 
       // Die Overlay-Zeilen mitgeben, damit Bild und Text zusammenpassen.
       const aussage = zeilen.length ? ` Das Bild trägt die Zeilen: „${zeilen.join(" ")}“.` : "";
+      // Was für ein Post das ist, kommt vor die Tonlage — danach richten sich
+      // Aufbau und Einstieg der Caption.
+      const art = postArt.trim()
+        ? `Art des Posts (danach richten sich Aufbau, Einstieg und Ton): ${postArt.trim()}. `
+        : "";
 
       const ergebnisse = await Promise.all(
         TONLAGEN.map(async (t) => {
-          const antwort = await api.post(datei, state.ziel as Ziel, t.notiz + aussage);
+          const antwort = await api.post(datei, state.ziel as Ziel, art + t.notiz + aussage);
           return { id: t.id, label: t.label, copy: antwort.text };
         })
       );
@@ -87,6 +100,19 @@ export default function CaptionIdeen() {
           <Spark />
           {vorschlaege.length ? "Neue Vorschläge" : "Captions vorschlagen"}
         </button>
+      </div>
+
+      <div className="field" style={{ marginTop: 14 }}>
+        <label>Was für ein Post ist das? (optional)</label>
+        <div className="chips" style={{ marginBottom: 6 }}>
+          {POST_ARTEN.map((a) => (
+            <button key={a} type="button" className="chip" data-on={postArt === a}
+              onClick={() => setPostArt(postArt === a ? "" : a)}>{a}</button>
+          ))}
+        </div>
+        <input type="text" value={postArt} onChange={(e) => setPostArt(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && foto && !laedt) erzeugen(); }}
+          placeholder="z. B. Weinabend am Freitag ankündigen, Gäste sollen reservieren" />
       </div>
 
       {!foto && (

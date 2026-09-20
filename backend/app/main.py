@@ -111,14 +111,27 @@ def empfehlung_get(prioritaet: str = "sichtbarkeit"):
     return llm.empfehlung(h, prioritaet)
 
 
+def _assistent_prompt_kontext(basis: str, notiz: str, post_art: str) -> str:
+    """Kontext fuer den Caption-Prompt: Tagesbasis plus Art des Posts plus Wunsch."""
+    zeilen = [basis]
+    if post_art.strip():
+        zeilen.append("ART DES POSTS (danach richten sich Aufbau, Einstieg und Ton der Caption): "
+                      + post_art.strip())
+    if notiz.strip():
+        zeilen.append(f"Wunsch vom Betrieb: {notiz.strip()}")
+    return "\n".join(zeilen)
+
+
 @app.post("/api/assistent", response_model=AssistentPost)
 async def assistent_post(
     file: UploadFile = File(...),
     prioritaet: str = Form(...),
     notiz: str = Form(""),
+    post_art: str = Form(""),
 ):
     """Ideen-Assistent: Foto plus Prioritaet ergeben Empfehlung, Post-Caption,
-    Story-Format, Reel-Drehplan und eine englische Caption - alles auf einmal."""
+    Story-Format, Reel-Drehplan und eine englische Caption - alles auf einmal.
+    post_art beschreibt frei, was fuer ein Post das ist (Angebot, Event, Jobs ...)."""
     if file.content_type not in ERLAUBT:
         raise HTTPException(415, "Nur JPEG, PNG oder WebP.")
     if prioritaet not in PRIORITAETEN:
@@ -133,7 +146,7 @@ async def assistent_post(
         shutil.copyfileobj(file.file, f)
 
     basis_kontext = llm.assistent_kontext(h, empf)
-    kontext = basis_kontext + (f"\nWunsch vom Betrieb: {notiz}" if notiz else "")
+    kontext = _assistent_prompt_kontext(basis_kontext, notiz, post_art)
     copy, engine, warn = llm.copy_fuer_foto(pfad, h, "gast", kontext)
     caption_en, _ = llm.uebersetzen(copy, h)
     szenen, _ = llm.reel_drehplan(h, prioritaet, notiz, basis_kontext)
@@ -145,6 +158,30 @@ async def assistent_post(
         engine=engine, warnungen=warn,
     )
     (DATA / f"assistent-{pid}.json").write_text(out.model_dump_json(), encoding="utf-8")
+    return out
+
+
+@app.post("/api/assistent/{pid}/caption", response_model=AssistentPost)
+def assistent_caption(pid: str, post_art: str = Form(""), notiz: str = Form("")):
+    """Caption fuer einen fertigen Durchlauf neu schreiben - mit anderer
+    Beschreibung, was fuer ein Post das ist. Foto und Empfehlung bleiben."""
+    datei = DATA / f"assistent-{pid}.json"
+    if not pid.isalnum() or not datei.exists():
+        raise HTTPException(404, "Durchlauf nicht gefunden.")
+    alt = AssistentPost(**json.loads(datei.read_text(encoding="utf-8")))
+    pfad = UPLOADS / Path(alt.source_url).name
+    if not pfad.exists():
+        raise HTTPException(404, "Foto zum Durchlauf fehlt.")
+
+    h = house_store.load()
+    kontext = _assistent_prompt_kontext(llm.assistent_kontext(h, alt.empfehlung), notiz, post_art)
+    copy, engine, warn = llm.copy_fuer_foto(pfad, h, "gast", kontext)
+    caption_en, _ = llm.uebersetzen(copy, h)
+    renders = {fmt: render.render(pfad, copy, h, fmt, pid) for fmt in render.FORMATS}
+
+    out = alt.model_copy(update={"text": copy, "caption_en": caption_en, "renders": renders,
+                                 "engine": engine, "warnungen": warn})
+    datei.write_text(out.model_dump_json(), encoding="utf-8")
     return out
 
 

@@ -61,17 +61,24 @@ export const api = {
     const fd = new FormData(); fd.append("ziel", ziel);
     return fetch(`/api/posts/${id}/variante`, { method: "POST", body: fd }).then(j<PostOut>);
   },
-  ideas: (anzahl: number, ziel?: Ziel) =>
+  ideas: (anzahl: number, ziel?: Ziel, beschreibung = "") =>
     fetch("/api/ideas", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ anzahl, ziel: ziel ?? null }),
+      body: JSON.stringify({ anzahl, ziel: ziel ?? null, beschreibung }),
     }).then(j<{ engine: string; ideen: Idea[] }>),
   signale: () => fetch("/api/signale").then(j<Signale>),
   empfehlung: (prioritaet: Prioritaet) =>
     fetch(`/api/empfehlung?prioritaet=${prioritaet}`).then(j<Empfehlung>),
-  assistent: (file: File, prioritaet: Prioritaet, notiz = "") => {
+  assistent: (file: File, prioritaet: Prioritaet, notiz = "", postArt = "") => {
     const fd = new FormData();
-    fd.append("file", file); fd.append("prioritaet", prioritaet); fd.append("notiz", notiz);
+    fd.append("file", file); fd.append("prioritaet", prioritaet);
+    fd.append("notiz", notiz); fd.append("post_art", postArt);
     return fetch("/api/assistent", { method: "POST", body: fd }).then(j<AssistentPost>);
+  },
+  // Caption eines fertigen Durchlaufs neu schreiben — Foto und Empfehlung bleiben.
+  captionNeu: (id: string, postArt: string, notiz = "") => {
+    const fd = new FormData();
+    fd.append("post_art", postArt); fd.append("notiz", notiz);
+    return fetch(`/api/assistent/${id}/caption`, { method: "POST", body: fd }).then(j<AssistentPost>);
   },
 };
