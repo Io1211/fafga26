@@ -132,10 +132,11 @@ async def assistent_post(
     with pfad.open("wb") as f:
         shutil.copyfileobj(file.file, f)
 
-    kontext = llm.assistent_kontext(h, empf) + (f"\n{notiz}" if notiz else "")
+    basis_kontext = llm.assistent_kontext(h, empf)
+    kontext = basis_kontext + (f"\nWunsch vom Betrieb: {notiz}" if notiz else "")
     copy, engine, warn = llm.copy_fuer_foto(pfad, h, "gast", kontext)
     caption_en, _ = llm.uebersetzen(copy, h)
-    szenen = llm.reel_drehplan(prioritaet)
+    szenen, _ = llm.reel_drehplan(h, prioritaet, notiz, basis_kontext)
     renders = {fmt: render.render(pfad, copy, h, fmt, pid) for fmt in render.FORMATS}
 
     out = AssistentPost(

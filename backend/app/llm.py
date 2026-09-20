@@ -324,8 +324,36 @@ def _naechstes_wochenende(tage: list[dict]) -> dict | None:
     return tage[0] if tage else None
 
 
-def reel_drehplan(prioritaet: str) -> list[str]:
-    return list(_REEL_VORLAGEN.get(prioritaet, _REEL_VORLAGEN["sichtbarkeit"]))
+_REEL_SCHEMA = {
+    "type": "object",
+    "properties": {"szenen": {"type": "array", "items": {"type": "string"}}},
+    "required": ["szenen"],
+    "additionalProperties": False,
+}
+
+
+def reel_drehplan(house: House, prioritaet: str, wunsch: str = "", kontext: str = "") -> tuple[list[str], str]:
+    """Drehplan fuers Reel. Ohne eigenen Wunsch bleibt es bei der festen
+    Vorlage je Prioritaet - mit Wunsch und Kontext schreibt Mistral einen
+    Drehplan, der genau auf diesen Post zugeschnitten ist."""
+    vorlage = list(_REEL_VORLAGEN.get(prioritaet, _REEL_VORLAGEN["sichtbarkeit"]))
+    if not HAS_KEY or not wunsch.strip():
+        return vorlage, "haus-muster"
+    try:
+        p = (f"Betrieb: {house.name}, {house.ort} ({house.art}).\n"
+             f"Prioritaet heute: {prioritaet}.\n"
+             f"Kontext:\n{kontext}\n"
+             f"Wunsch vom Betrieb fuer diesen Post: {wunsch}\n\n"
+             "Schlage einen kurzen Drehplan fuer ein Reel vor: 3 bis 4 Kameraeinstellungen, "
+             "je eine kurze Anweisung inklusive ungefaehrer Laenge in Sekunden.\n"
+             'Antworte als JSON: {"szenen": ["...", "..."]}')
+        data = _call(MODEL_TEXT, [{"role": "user", "content": p}], _REEL_SCHEMA)
+        szenen = [str(s).strip() for s in data.get("szenen", []) if str(s).strip()]
+        if szenen:
+            return szenen[:5], "mistral"
+    except Exception:
+        pass
+    return vorlage, "haus-muster"
 
 
 def empfehlung(house: House, prioritaet: str) -> Empfehlung:

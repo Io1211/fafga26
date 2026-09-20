@@ -18,6 +18,7 @@ type Ausgabe = (typeof AUSGABEN)[number]["id"];
 
 export default function Assistent() {
   const [prioritaet, setPrioritaet] = useState<Prioritaet | null>(null);
+  const [wunsch, setWunsch] = useState("");
   const [vorschau, setVorschau] = useState<string | null>(null);
   const [ergebnis, setErgebnis] = useState<AssistentPost | null>(null);
   const [ausgabe, setAusgabe] = useState<Ausgabe>("post");
@@ -32,13 +33,13 @@ export default function Assistent() {
     setErgebnis(null); setFehler(null);
     setVorschau(URL.createObjectURL(f));
     setLaedt(true);
-    try { setErgebnis(await api.assistent(f, p)); }
+    try { setErgebnis(await api.assistent(f, p, wunsch)); }
     catch (e) { setFehler(String(e)); }
     finally { setLaedt(false); }
   }
 
   function neuStarten() {
-    setPrioritaet(null); setVorschau(null); setErgebnis(null); setFehler(null); setAusgabe("post");
+    setPrioritaet(null); setWunsch(""); setVorschau(null); setErgebnis(null); setFehler(null); setAusgabe("post");
   }
 
   return (
@@ -55,6 +56,12 @@ export default function Assistent() {
                 <span>{p.hint}</span>
               </button>
             ))}
+          </div>
+
+          <div className="field" style={{ marginTop: 14 }}>
+            <label>Was soll der Post zeigen? (optional)</label>
+            <textarea value={wunsch} onChange={(e) => setWunsch(e.target.value)}
+              placeholder="z. B. Fokus auf die Terrasse bei Sonnenuntergang, verspielter Ton, mit Hund" />
           </div>
 
           {prioritaet && (
