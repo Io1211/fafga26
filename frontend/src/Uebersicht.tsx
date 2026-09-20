@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, Idea, Kennzahlen, Signale } from "./api";
-import { Haus, Mail, Spark, Team, Up } from "./icons";
+import { Haus, Mail, Team, Up } from "./icons";
 
 const ENTWUERFE = [
   { titel: "Herbstmenü – Kürbissuppe", meta: "Foto · Instagram · Reel", status: "Entwurf" },
