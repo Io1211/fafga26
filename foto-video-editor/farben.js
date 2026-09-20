@@ -80,3 +80,63 @@ export function gutAufDunkel(hexfarbe) {
   const { l, s } = nachHsl((n >> 16) & 255, (n >> 8) & 255, n & 255);
   return l > 0.32 && s > 0.25;
 }
+
+/**
+ * Weißen Hintergrund aus einem Logo entfernen.
+ *
+ * Nötig, weil Logos oft als JPEG vorliegen — und JPEG kennt keine
+ * Durchsichtigkeit. Was durchsichtig sein sollte, ist dort weiß, und auf
+ * einem dunklen Foto klebt dann ein weißer Kasten um das Logo.
+ *
+ * Der Rand wird weich: je heller ein Pixel, desto durchsichtiger. Ein harter
+ * Schnitt bei einem Schwellwert erzeugt ausgefranste Treppenkanten.
+ *
+ * Nebenwirkung, die man kennen muss: weiße Flächen INNERHALB des Logos
+ * verschwinden mit. Das lässt sich nicht unterscheiden, deshalb ist es
+ * abschaltbar.
+ *
+ * @returns {string|null} data-URL mit Alphakanal, oder null wenn das Bild
+ *   von fremder Herkunft ist und der Canvas gesperrt bleibt
+ */
+export function freigestellt(bild, schwelle = 236) {
+  const cv = document.createElement("canvas");
+  cv.width = bild.naturalWidth || bild.width;
+  cv.height = bild.naturalHeight || bild.height;
+  const c = cv.getContext("2d", { willReadFrequently: true });
+  c.drawImage(bild, 0, 0, cv.width, cv.height);
+
+  let bild_daten;
+  try {
+    bild_daten = c.getImageData(0, 0, cv.width, cv.height);
+  } catch (e) {
+    return null;
+  }
+
+  const a = bild_daten.data;
+  const spanne = 255 - schwelle;
+  for (let i = 0; i < a.length; i += 4) {
+    const hellste = Math.min(a[i], a[i + 1], a[i + 2]);
+    if (hellste >= schwelle) {
+      a[i + 3] = Math.round(a[i + 3] * (spanne ? (255 - hellste) / spanne : 0));
+    }
+  }
+  c.putImageData(bild_daten, 0, 0);
+  return cv.toDataURL("image/png");
+}
+
+/** Hat das Bild überhaupt durchsichtige Stellen? */
+export function hatDurchsicht(bild) {
+  const gr = 60;
+  const cv = document.createElement("canvas");
+  cv.width = gr;
+  cv.height = Math.max(1, Math.round(gr * (bild.height || 1) / (bild.width || 1)));
+  const c = cv.getContext("2d", { willReadFrequently: true });
+  c.drawImage(bild, 0, 0, cv.width, cv.height);
+  try {
+    const a = c.getImageData(0, 0, cv.width, cv.height).data;
+    for (let i = 3; i < a.length; i += 4) if (a[i] < 250) return true;
+    return false;
+  } catch (e) {
+    return true;   // im Zweifel nichts vorschlagen
+  }
+}
