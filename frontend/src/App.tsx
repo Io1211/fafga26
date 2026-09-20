@@ -11,7 +11,9 @@ type View = "uebersicht" | "studio" | "ideen" | "jahreskalender" | "assistent";
 
 const NAV: { id: View; label: string; icon: JSX.Element; badge?: string }[] = [
   { id: "uebersicht", label: "Übersicht", icon: <Grid /> },
-  { id: "assistent", label: "Ideen-Assistent", icon: <Cam /> },
+  // Ausgeblendet: der Ideen-Assistent ist ins Studio gewandert. Dort füllt
+  // ein Anweisungsfeld die Textfelder direkt, statt in einem eigenen Schritt.
+  // Ansicht und Komponente bleiben bestehen, nur der Eintrag fehlt.
   { id: "studio", label: "Studio", icon: <Doc /> },
   { id: "ideen", label: "Caption-Ideen", icon: <Spark /> },
   { id: "jahreskalender", label: "Jahreskalender", icon: <Cal /> },

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { api, Idea, Kennzahlen, Signale } from "./api";
 import { Haus, Mail, Team } from "./icons";
 import Jahreskalender from "./Jahreskalender";
@@ -18,10 +18,14 @@ const INBOX = [
     preview: "Sucht ihr noch Personal für die Rezeption? Kann ich mich bewerben?" },
 ];
 
+// Fotos wandern direkt in den Editor-Zustand; das Studio zeigt sie beim Öffnen.
+import { motivHinzu } from "../../foto-video-editor/zustand.js";
+
 export default function Uebersicht({ onStudio, onIdeen }:
   { onStudio: () => void; onIdeen: () => void }) {
   const [k, setK] = useState<Kennzahlen | null>(null);
   const [sig, setSig] = useState<Signale | null>(null);
+  const datei = useRef<HTMLInputElement>(null);
   const [ideen, setIdeen] = useState<Idea[]>([]);
   const [laedt, setLaedt] = useState(false);
 
@@ -59,9 +63,34 @@ export default function Uebersicht({ onStudio, onIdeen }:
           <div className="rowhead">
             <div>
               <div className="eyebrow">Selbst gemacht · ohne Agentur</div>
-              <h2>Was heute sichtbar werden soll</h2>
+              <h2>Heute sichtbar werden</h2>
             </div>
           </div>
+
+          {/* Der erste Schritt ist immer derselbe: ein Foto. Deshalb steht er
+              hier als einziger großer Knopf und führt direkt ins Studio. */}
+          <button className="starter" onClick={() => datei.current?.click()}>
+            <span className="starter-gross">Fotos hochladen und beginnen</span>
+            <span className="starter-klein">
+              Einzelne Bilder oder einen ganzen Ordner — der Rest passiert im Studio
+            </span>
+          </button>
+          <input
+            ref={datei}
+            type="file"
+            accept="image/*"
+            multiple
+            hidden
+            onChange={(e) => {
+              const fs = [...(e.target.files ?? [])].filter((f) => f.type.startsWith("image/"));
+              if (!fs.length) return;
+              fs.slice(0, 60).forEach((f) => {
+                const url = URL.createObjectURL(f);
+                motivHinzu({ src: url, datei: url, label: f.name, blob: f });
+              });
+              onStudio();
+            }}
+          />
 
           {sig && (sig.wetter.kurz || sig.feiertage.kurz || sig.events.kurz) && (
             <div className="chips" style={{ marginBottom: 14 }}>

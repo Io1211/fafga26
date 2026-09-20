@@ -76,7 +76,13 @@ export const state = {
  * ------------------------------------------------------------------ */
 
 export function setzeHaus(teil)  { Object.assign(state.haus, teil); sichern(); melden("haus"); }
-export function setzePost(post)  { state.post = post; melden("post"); }
+export function setzePost(post)  {
+  state.post = post;
+  // Muss mitgesichert werden: sonst holt laden() beim nächsten Einhängen der
+  // Studio-Ansicht einen alten Textstand zurück und überschreibt den neuen.
+  sichern();
+  melden("post");
+}
 export function setzeStil(teil)  { Object.assign(state.stil, teil); sichern(); melden("post"); }
 export function setzeOption(t)   { Object.assign(state, t); sichern(); melden("post"); }
 export function setzeMotiv(i)    { state.motiv = Math.max(0, Math.min(state.motive.length - 1, i)); melden("motiv"); }
@@ -86,20 +92,33 @@ export function motivHinzu(m)    { state.motive.push(m); state.motiv = state.mot
  *  Umrechnung Backend ↔ Editor
  * ------------------------------------------------------------------ */
 
-/** Ein House-Objekt aus /api/house übernehmen. */
+/** Was der Benutzer selbst gesetzt hat. Das überschreibt das Backend nicht. */
+const selbstGesetzt = new Set();
+export function merkeEigene(feld) { selbstGesetzt.add(feld); }
+
+/**
+ * Ein House-Objekt aus /api/house übernehmen.
+ *
+ * Läuft bei jedem Einhängen der Studio-Ansicht. Früher setzte es dabei
+ * `logo: h.logo ?? null` — und weil das Backend kein Logo kennt, war das
+ * hochgeladene Logo nach einem Wechsel auf den Jahreskalender und zurück
+ * weg. Dasselbe galt für eine selbst gewählte Hausfarbe. Was der Benutzer
+ * im Editor gesetzt hat, gewinnt deshalb gegen das Backend.
+ */
 export function uebernehmeHaus(h) {
   if (!h) return;
-  setzeHaus({
+  const teil = {
     name: h.name ?? state.haus.name,
     ort: h.ort ?? state.haus.ort,
     art: h.art ?? state.haus.art,
-    farbe: h.farbe ?? state.haus.farbe,
-    logo: h.logo ?? null,
     belege: h.belege ?? [],
     sperrliste: h.sperrliste ?? [],
     ctaGast: h.cta_gast ?? state.haus.ctaGast,
     ctaTeam: h.cta_team ?? state.haus.ctaTeam
-  });
+  };
+  if (!selbstGesetzt.has("farbe") && h.farbe) teil.farbe = h.farbe;
+  if (!selbstGesetzt.has("logo") && h.logo) teil.logo = h.logo;
+  setzeHaus(teil);
 }
 
 /** Zurück in die Form, die PUT /api/house erwartet. */
@@ -142,6 +161,23 @@ export function kartenAus(zeilen, key) {
 }
 
 /* ------------------------------------------------------------------ *
+ *  KI-Brücke
+ * ------------------------------------------------------------------ *
+ * Der Editor soll nichts über das Backend wissen. Die Gastseite hinterlegt
+ * hier eine Funktion; ist keine da, bleibt das Feld im Editor ausgeblendet.
+ *
+ *   setzeKiHandler(async (anweisung, foto) => copyObjekt)
+ */
+
+let kiHandler = null;
+export function setzeKiHandler(fn) { kiHandler = fn; melden("ki"); }
+export function hatKi() { return typeof kiHandler === "function"; }
+export async function kiFragen(anweisung, foto) {
+  if (!kiHandler) throw new Error("Keine KI hinterlegt.");
+  return kiHandler(anweisung, foto);
+}
+
+/* ------------------------------------------------------------------ *
  *  Backend — arbeitet auch ohne
  * ------------------------------------------------------------------ */
 
@@ -171,7 +207,11 @@ export function sichern() {
   try {
     localStorage.setItem(SCHLUESSEL, JSON.stringify({
       format: state.format, passung: state.passung, randfarbe: state.randfarbe,
-      vorlage: state.vorlage, stil: state.stil
+      vorlage: state.vorlage, stil: state.stil,
+      // Der Textvorschlag und das gewählte Haus überleben den Wechsel der
+      // Ansicht und das Neuladen der Seite.
+      post: state.post,
+      haus: { ...state.haus, logo: null }   // Objekt-URLs überleben nicht
     }));
   } catch (e) { /* privates Fenster */ }
 }
@@ -184,6 +224,8 @@ export function laden() {
     if (d.randfarbe) state.randfarbe = d.randfarbe;
     if (d.vorlage) state.vorlage = d.vorlage;
     if (d.stil) Object.assign(state.stil, d.stil);
+    if (d.post) state.post = d.post;
+    if (d.haus) Object.assign(state.haus, d.haus);
   } catch (e) { /* kaputter Eintrag */ }
 }
 

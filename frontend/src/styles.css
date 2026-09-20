@@ -203,3 +203,23 @@ textarea{resize:vertical;min-height:90px}
 .fve-raum { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 28px;
   align-items: start; }
 @media (max-width: 1100px) { .fve-raum { grid-template-columns: 1fr; } }
+
+/* Der eine große Einstieg auf der Übersicht. Bewusst der einzige Knopf
+   dieser Größe — alles andere auf der Seite ist Information, nicht Aktion. */
+.starter{display:flex;flex-direction:column;gap:4px;width:100%;text-align:left;
+  padding:18px 20px;margin-bottom:16px;cursor:pointer;
+  background:var(--loden,#2f4a3a);color:#f4f6f2;border:0;border-radius:var(--r,4px);
+  transition:filter .13s}
+.starter:hover{filter:brightness(1.12)}
+.starter-gross{font-size:17px;font-weight:600}
+.starter-klein{font-size:12.5px;opacity:.8}
+
+/* Caption-Ideen: drei Fassungen nebeneinander zum Vergleichen */
+.captionliste{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:14px;margin-top:16px}
+.captioncard{border:1px solid var(--line,#daded2);border-radius:var(--r,4px);
+  padding:14px;display:flex;flex-direction:column;gap:8px;background:#fff}
+.captiontext{white-space:pre-wrap;font-size:13.5px;line-height:1.6;margin:0}
+.captioncard .hashtags{font-family:var(--mono);font-size:11.5px;color:#2f4a3a;
+  word-break:break-word;line-height:1.7}
+.captioncard .quellen{font-size:11.5px;color:#8b9289}
