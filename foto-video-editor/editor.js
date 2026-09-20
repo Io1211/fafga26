@@ -13,7 +13,7 @@ import { state, setzeMotiv, motivHinzu, setzeOption, setzeHaus, setzeStil, on } 
 import { $, $$, toast, slug, bildHolen } from "../src/core/dom.js";
 import { farbenAus, gutAufDunkel } from "./farben.js";
 import * as eigeneVorlagen from "./vorlagen.js";
-import { zeichnePost, alsPng, VORLAGEN, SCHRIFTEN, TEXTRAENDER, LOGOPOSITIONEN, STANDARDSTIL } from "./image.js";
+import { zeichnePost, alsBild, VORLAGEN, SCHRIFTEN, TEXTRAENDER, LOGOPOSITIONEN, STANDARDSTIL } from "./image.js";
 import { baueVideo } from "./video.js";
 
 let stageCanvas = null;
@@ -37,7 +37,7 @@ function markup() {
   <p class="stagenote">Das Foto wird nie beschnitten — den Rand füllt der eigene Unschärfe-Hintergrund.</p>
   <div class="videowrap" id="edVideoWrap" hidden><video id="edVideo" controls playsinline></video></div>
   <div class="row" style="justify-content:center">
-    <button class="btn primary" id="edPng">Bild sichern</button>
+    <button class="btn primary" id="edPng">Bild sichern (JPEG)</button>
     <button class="btn" id="edVideoBtn">Story-Video bauen</button>
   </div>`;
 }
@@ -218,18 +218,37 @@ export function neuZeichnen() {
  *  Sichern
  * ------------------------------------------------------------------ */
 
-async function pngSichern() {
-  const blob = await alsPng();
-  if (!blob) return toast("Das Bild konnte nicht erzeugt werden.");
-  if (downloads) {
-    try {
-      await downloads.save({ filename: dateiname("png"), data: blob });
-      return toast("Gesichert.");
-    } catch (e) {
-      if (e?.code === "declined") return toast("Abgebrochen.");
+async function bildSichern() {
+  const btn = $("#edPng");
+  btn.disabled = true;
+  try {
+    const blob = await alsBild();
+    if (!blob) return toast("Das Bild konnte nicht erzeugt werden.");
+    const name = dateiname("jpg");
+
+    if (downloads) {
+      try {
+        await downloads.save({ filename: name, data: blob });
+        return toast("Gesichert.");
+      } catch (e) {
+        if (e?.code === "declined") return toast("Abgebrochen.");
+        // andere Fehler: unten über den Browser sichern
+      }
     }
+
+    // Ohne die Sicherungsfunktion des Viewers: normaler Browser-Download
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+    toast(`${name} gesichert.`);
+  } finally {
+    btn.disabled = false;
   }
-  toast("Rechtsklick auf die Vorschau, dann „Bild sichern unter“.");
 }
 
 async function videoBauen() {
@@ -583,7 +602,7 @@ export function aufbauen(buehne, bedienung) {
     toast("Eigene Motive entfernt.");
   };
 
-  $("#edPng").onclick = pngSichern;
+  $("#edPng").onclick = bildSichern;
   $("#edVideoBtn").onclick = videoBauen;
 
   // Auf Änderungen der anderen Module reagieren

@@ -454,12 +454,19 @@ export async function zeichnePost(canvas, opts = {}) {
   c.restore();
 }
 
-/** Den aktuellen Post in voller Auflösung als PNG-Blob (K10). */
-export async function alsPng() {
+/**
+ * Den aktuellen Post in voller Auflösung als Bild-Blob (K10).
+ *
+ * JPEG, nicht PNG: Instagram rechnet jeden Upload ohnehin in JPEG um, und
+ * ein PNG dieser Größe ist ein Vielfaches schwerer, ohne dass davon etwas
+ * ankommt. Durchsichtigkeit braucht es nicht — der Hintergrund ist immer
+ * vollflächig gefüllt.
+ */
+export async function alsBild(qualitaet = 0.92) {
   const mass = MASSE[state.format] || MASSE.story;
   const gross = document.createElement("canvas");
   gross.width = mass.w;
   gross.height = mass.h;
   await zeichnePost(gross, { raster: false });
-  return new Promise(r => gross.toBlob(r, "image/png"));
+  return new Promise(r => gross.toBlob(r, "image/jpeg", qualitaet));
 }
