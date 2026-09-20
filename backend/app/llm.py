@@ -6,7 +6,7 @@ das System weiter - nur ohne das Foto anzusehen.
 """
 from __future__ import annotations
 
-import base64, hashlib, json, random, re
+import base64, hashlib, json, logging, random, re, time
 from datetime import date
 from io import BytesIO
 from pathlib import Path
@@ -17,6 +17,8 @@ from PIL import Image
 from . import belegung, signale
 from .config import API_URL, DATA, HAS_KEY, LAND, MISTRAL_KEY, MODEL_TEXT, MODEL_VISION
 from .schemas import Copy, Empfehlung, House, Idea
+
+log = logging.getLogger("hauspost.llm")
 
 CACHE = DATA / "cache"
 CACHE.mkdir(exist_ok=True)
@@ -33,23 +35,119 @@ def _b64(path: Path, max_kante: int = 1100) -> str:
     return base64.b64encode(buf.getvalue()).decode()
 
 
-def _call(model: str, messages: list, schema: dict | None = None) -> dict:
+class MistralFehler(Exception):
+    """Antwort von Mistral war nicht brauchbar - mit Status und Grund, damit das
+    UI sagen kann, was los ist, statt nur "nicht erreichbar"."""
+
+
+class ModellGesperrt(MistralFehler):
+    """Das Modell gibt es fuer diesen Schluessel nicht (kein Kontingent, nicht im
+    Tarif, unbekannter Name). Das naechste Modell in der Kette ist dran."""
+
+
+# Reihenfolge, in der Modelle probiert werden. Vorne das konfigurierte, dahinter
+# Modelle, die auch im Gratis-Tarif ein Kontingent haben. Was einmal geklappt
+# hat, bleibt fuer die Lebensdauer des Prozesses aktiv.
+_KETTE = {
+    "vision": [MODEL_VISION, "pixtral-12b-latest", "mistral-small-latest"],
+    "text": [MODEL_TEXT, "ministral-8b-latest", "open-mistral-nemo", "mistral-small-latest"],
+}
+_AKTIV: dict[str, str] = {}
+
+
+def aktive_modelle() -> dict[str, str]:
+    return {art: _AKTIV.get(art, kette[0]) for art, kette in _KETTE.items()}
+
+
+def _kette(art: str) -> list[str]:
+    erstes = _AKTIV.get(art)
+    reihe = ([erstes] if erstes else []) + _KETTE[art]
+    out: list[str] = []
+    for m in reihe:
+        if m and m not in out:
+            out.append(m)
+    return out
+
+
+def _fehlertext(r: httpx.Response) -> str:
+    try:
+        return str(r.json().get("message") or r.text)[:160]
+    except Exception:
+        return r.text[:160]
+
+
+def _json_aus(txt: str) -> dict:
+    """JSON aus der Antwort ziehen - auch wenn das Modell drumherum redet oder
+    einen ```json-Zaun setzt. Das erste vollstaendige Objekt zaehlt."""
+    txt = txt.strip()
+    try:
+        return json.loads(txt)
+    except Exception:
+        pass
+    m = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", txt, re.S)
+    if m:
+        try:
+            return json.loads(m.group(1))
+        except Exception:
+            pass
+    dec = json.JSONDecoder()
+    for i, ch in enumerate(txt):
+        if ch == "{":
+            try:
+                obj, _ = dec.raw_decode(txt[i:])
+                if isinstance(obj, dict):
+                    return obj
+            except Exception:
+                continue
+    raise MistralFehler("Antwort enthielt kein JSON")
+
+
+def _senden(model: str, messages: list, schema: dict | None) -> dict:
     body = {"model": model, "messages": messages, "temperature": 0.2, "max_tokens": 1200}
     if schema:
         body["response_format"] = {
             "type": "json_schema",
             "json_schema": {"name": "antwort", "schema": schema, "strict": True},
         }
+    else:
+        body["response_format"] = {"type": "json_object"}
     headers = {"Authorization": f"Bearer {MISTRAL_KEY}", "Content-Type": "application/json"}
     with httpx.Client(timeout=60) as c:
         r = c.post(API_URL, json=body, headers=headers)
-        if r.status_code in (400, 422) and schema:
+        if r.status_code in (400, 422) and schema and "model" not in _fehlertext(r).lower():
             body["response_format"] = {"type": "json_object"}
             r = c.post(API_URL, json=body, headers=headers)
-        r.raise_for_status()
-        txt = r.json()["choices"][0]["message"]["content"]
-    m = re.search(r"\{.*\}", txt, re.S)
-    return json.loads(m.group(0) if m else txt)
+        if r.status_code == 429 and r.headers.get("x-ratelimit-limit-req-minute") not in ("0", None):
+            # echtes Tempolimit, kein fehlendes Kontingent - kurz warten, einmal nachlegen
+            time.sleep(min(float(r.headers.get("retry-after", "1") or 1), 3))
+            r = c.post(API_URL, json=body, headers=headers)
+    if r.status_code == 429 and r.headers.get("x-ratelimit-limit-req-minute") == "0":
+        raise ModellGesperrt(f"{model}: kein Kontingent in diesem Tarif")
+    if r.status_code in (403, 404):
+        raise ModellGesperrt(f"{model}: {_fehlertext(r)}")
+    if r.status_code == 400 and "model" in _fehlertext(r).lower():
+        raise ModellGesperrt(f"{model}: {_fehlertext(r)}")
+    if r.status_code >= 400:
+        raise MistralFehler(f"{r.status_code} {_fehlertext(r)} ({model})")
+    txt = r.json()["choices"][0]["message"]["content"]
+    if isinstance(txt, list):   # neuere API-Fassung: Liste aus Text-Bausteinen
+        txt = "".join(t.get("text", "") for t in txt if isinstance(t, dict))
+    return _json_aus(txt)
+
+
+def _call(art: str, messages: list, schema: dict | None = None) -> dict:
+    """Anfrage an Mistral. `art` ist "vision" oder "text"; die Modellkette dahinter
+    wird der Reihe nach probiert, bis eines antwortet."""
+    letzter: Exception | None = None
+    for model in _kette(art):
+        try:
+            data = _senden(model, messages, schema)
+            _AKTIV[art] = model
+            return data
+        except ModellGesperrt as e:
+            letzter = e
+            continue
+    raise letzter or MistralFehler("kein Modell verfuegbar")
 
 
 # ---------------------------------------------------------------- Prompt
@@ -79,9 +177,12 @@ TON: oesterreichisches Deutsch, direkt, persoenlich, kein Marketingdeutsch,
 keine Superlative, hoechstens ein Emoji.
 
 OVERLAY - Text, der ins Bild gebrannt wird:
-- 2 bis 4 Zeilen, jede HOECHSTENS {MAX_ZEILE} Zeichen inklusive Leerzeichen
-- Grossbuchstaben, zusammen ergeben sie einen Satz
-- genau eine Zeile ist das Schluesselwort
+- 2 bis 4 Zeilen, jede HOECHSTENS {MAX_ZEILE} Zeichen inklusive Leerzeichen - zaehle nach
+- Grossbuchstaben, zusammen ergeben sie EINEN kurzen Satz, kein Aufzaehlen der Fakten
+- genau eine Zeile ist das Schluesselwort (key), woertlich wie in head
+- nur als Muster fuer die Form, nicht abschreiben: head = ["EIN FOTO", "REICHT."], key = "REICHT."
+
+kicker: kleine Zeile ueber dem Overlay, hoechstens 30 Zeichen, z. B. "{house.name} · {house.ort}"
 
 focal_x und focal_y geben an, wo das Hauptmotiv im Bild liegt (0 bis 1).
 
@@ -105,13 +206,48 @@ _COPY_SCHEMA = {
 }
 
 
+def _kuerzen(zeile: str, limit: int = MAX_ZEILE) -> str:
+    """Auf das Limit kuerzen - an der letzten Wortgrenze, nicht mitten im Wort."""
+    if len(zeile) <= limit:
+        return zeile
+    kurz = zeile[:limit].rstrip()
+    if " " in kurz and len(zeile) > limit:
+        kurz = kurz[:kurz.rfind(" ")]
+    return kurz.strip() or zeile[:limit].strip()
+
+
+def _copy_normalisieren(d: dict, house: House) -> dict:
+    """Was kleinere Modelle so liefern: Kicker zu lang, Zahlen als Text, Hashtags
+    ohne Raute. Hier wird es in die Form gebracht, die Copy erwartet - statt die
+    ganze Antwort wegzuwerfen."""
+    d = dict(d)
+    kicker = str(d.get("kicker") or f"{house.name} · {house.ort}").strip()
+    d["kicker"] = _kuerzen(kicker, 30) if len(kicker) > 30 else kicker
+    d["head"] = [str(z).strip() for z in (d.get("head") or []) if str(z).strip()]
+    d["key"] = str(d.get("key") or "").strip()
+    d["caption"] = str(d.get("caption") or "").strip()
+    tags = []
+    for t in d.get("hashtags") or []:
+        t = str(t).strip().replace(" ", "")
+        if t:
+            tags.append(t if t.startswith("#") else "#" + t)
+    d["hashtags"] = tags
+    d["quellen"] = [str(q).strip() for q in (d.get("quellen") or []) if str(q).strip()]
+    for k in ("focal_x", "focal_y"):
+        try:
+            d[k] = min(1.0, max(0.0, float(d.get(k, 0.5))))
+        except (TypeError, ValueError):
+            d[k] = 0.5
+    return d
+
+
 def _pruefen(c: Copy, house: House) -> list[str]:
     warn = []
     c.head = [z.upper().strip() for z in c.head if str(z).strip()][:4]
     lang = [z for z in c.head if len(z) > MAX_ZEILE]
     if lang:
         warn.append(f"{len(lang)} Zeile(n) ueber {MAX_ZEILE} Zeichen - gekuerzt")
-        c.head = [z[:MAX_ZEILE].strip() for z in c.head]
+        c.head = [_kuerzen(z) for z in c.head]
     if c.key.upper().strip() not in c.head:
         c.key = c.head[-1] if c.head else ""
     text = (c.caption + " " + " ".join(c.head)).lower()
@@ -150,26 +286,37 @@ def haus_muster(house: House, ziel: str, notiz: str = "") -> Copy:
 
 # ---------------------------------------------------------------- oeffentlich
 
+def _grund(e: Exception) -> str:
+    if isinstance(e, MistralFehler):
+        return str(e)
+    if isinstance(e, httpx.TimeoutException):
+        return "Zeitueberschreitung"
+    if isinstance(e, httpx.HTTPError):
+        return f"nicht erreichbar ({type(e).__name__})"
+    return f"Antwort unbrauchbar ({type(e).__name__})"
+
+
 def copy_fuer_foto(photo: Path, house: House, ziel: str, notiz: str = "") -> tuple[Copy, str, list[str]]:
     key = hashlib.sha1((photo.name + ziel + notiz + house.model_dump_json()).encode()).hexdigest()[:16]
     cached = CACHE / f"{key}.json"
 
     if HAS_KEY:
         try:
-            data = _call(MODEL_VISION, [{"role": "user", "content": [
+            data = _call("vision", [{"role": "user", "content": [
                 {"type": "text", "text": _prompt(house, ziel, notiz)},
                 {"type": "image_url", "image_url": f"data:image/jpeg;base64,{_b64(photo)}"},
             ]}], _COPY_SCHEMA)
-            c = Copy(**data)
+            c = Copy(**_copy_normalisieren(data, house))
             warn = _pruefen(c, house)
             cached.write_text(c.model_dump_json(), encoding="utf-8")
             return c, "mistral", warn
         except Exception as e:
+            log.warning("copy_fuer_foto: %s", _grund(e))
             if cached.exists():
                 c = Copy(**json.loads(cached.read_text(encoding="utf-8")))
-                return c, "cache", [f"API nicht erreichbar ({type(e).__name__}) - gespeicherte Fassung"]
+                return c, "cache", [f"Mistral: {_grund(e)} - gespeicherte Fassung"]
             c = haus_muster(house, ziel, notiz)
-            return c, "haus-muster", [f"API nicht erreichbar ({type(e).__name__})"]
+            return c, "haus-muster", [f"Mistral: {_grund(e)}"]
 
     if cached.exists():
         return Copy(**json.loads(cached.read_text(encoding="utf-8"))), "cache", []
@@ -236,6 +383,44 @@ def _anlaesse_block(sig: dict) -> str:
     return "\n".join("- " + z for z in zeilen)
 
 
+_IDEEN_SCHEMA = {
+    "type": "object",
+    "properties": {"ideen": {"type": "array", "items": {
+        "type": "object",
+        "properties": {
+            "titel": {"type": "string"},
+            "ziel": {"type": "string", "enum": ["gast", "team"]},
+            "anlass": {"type": "string"},
+            "quelle": {"type": "string"},
+            "hook": {"type": "string"},
+            "szenen": {"type": "array", "items": {"type": "string"}},
+            "warum": {"type": "string"},
+        },
+        "required": ["titel", "ziel", "anlass", "quelle", "hook", "szenen", "warum"],
+        "additionalProperties": False,
+    }}},
+    "required": ["ideen"],
+    "additionalProperties": False,
+}
+
+
+def _idee_normalisieren(d: dict) -> dict:
+    """Kleine Modelle liefern Szenen gern als Objekte ({"anweisung": ...}) und
+    das Ziel in Grossbuchstaben - hier wird das glattgezogen, bevor Pydantic prueft."""
+    d = dict(d)
+    szenen = []
+    for sz in d.get("szenen") or []:
+        if isinstance(sz, dict):
+            sz = " ".join(str(v) for v in sz.values() if v)
+        sz = str(sz).strip()
+        if sz:
+            szenen.append(sz)
+    d["szenen"] = szenen
+    z = str(d.get("ziel", "gast")).strip().lower()
+    d["ziel"] = "team" if z.startswith("team") or "mitarbeit" in z else "gast"
+    return d
+
+
 def ideen(house: House, anzahl: int = 6, ziel: str | None = None) -> tuple[list[Idea], str]:
     sig = signale.alle(house.ort, LAND)
 
@@ -253,18 +438,22 @@ def ideen(house: House, anzahl: int = 6, ziel: str | None = None) -> tuple[list[
                  "szenen (3 bis 4 Kameraeinstellungen fuer ein kurzes Video, je eine kurze "
                  "Anweisung), warum (ein Satz).\n"
                  'Antworte als JSON: {"ideen": [...]}')
-            data = _call(MODEL_TEXT, [{"role": "user", "content": p}])
-            roh = data.get("ideen", data if isinstance(data, list) else [])
-            out = []
-            for d in roh[:anzahl]:
-                try:
-                    out.append(Idea(**d))
-                except Exception:
-                    continue
-            if out:
-                return out, "mistral"
-        except Exception:
-            pass
+            out: list[Idea] = []
+            # Mit striktem Schema liefert das kleine Modell gelegentlich eine leere
+            # Liste - dann ein zweiter Versuch im freien JSON-Modus.
+            for schema in (_IDEEN_SCHEMA, None):
+                data = _call("text", [{"role": "user", "content": p}], schema)
+                roh = data.get("ideen", data if isinstance(data, list) else [])
+                for d in roh[:anzahl]:
+                    try:
+                        out.append(Idea(**_idee_normalisieren(d)))
+                    except Exception:
+                        continue
+                if out:
+                    return out, "mistral"
+                log.warning("ideen: Mistral lieferte %d Eintraege, keiner brauchbar", len(roh))
+        except Exception as e:
+            log.warning("ideen: %s", _grund(e))
 
     belege = [b for b in house.belege if b.strip()] or ["Wir sind da."]
     out = _signal_ideen(sig, ziel)[:anzahl]
@@ -347,12 +536,12 @@ def reel_drehplan(house: House, prioritaet: str, wunsch: str = "", kontext: str 
              "Schlage einen kurzen Drehplan fuer ein Reel vor: 3 bis 4 Kameraeinstellungen, "
              "je eine kurze Anweisung inklusive ungefaehrer Laenge in Sekunden.\n"
              'Antworte als JSON: {"szenen": ["...", "..."]}')
-        data = _call(MODEL_TEXT, [{"role": "user", "content": p}], _REEL_SCHEMA)
+        data = _call("text", [{"role": "user", "content": p}], _REEL_SCHEMA)
         szenen = [str(s).strip() for s in data.get("szenen", []) if str(s).strip()]
         if szenen:
             return szenen[:5], "mistral"
-    except Exception:
-        pass
+    except Exception as e:
+        log.warning("reel_drehplan: %s", _grund(e))
     return vorlage, "haus-muster"
 
 
@@ -455,13 +644,13 @@ def uebersetzen(copy: Copy, house: House) -> tuple[str, str]:
     deutsche Caption bleibt stehen, das UI markiert das transparent."""
     if HAS_KEY:
         try:
-            data = _call(MODEL_TEXT, [{"role": "user", "content":
+            data = _call("text", [{"role": "user", "content":
                 "Uebersetze diese Social-Media-Caption fuer einen Hotel-/Gastro-Betrieb "
                 "ins natuerliche Englisch. Ton, Zeilenumbrueche und Fakten beibehalten, "
                 f"nichts hinzufuegen:\n\n{copy.caption}\n\n"
                 'Antworte als JSON: {"caption_en": "..."}'
             }], _UEBERSETZUNG_SCHEMA)
             return data["caption_en"], "mistral"
-        except Exception:
-            pass
+        except Exception as e:
+            log.warning("uebersetzen: %s", _grund(e))
     return copy.caption, "unuebersetzt"

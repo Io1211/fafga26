@@ -15,17 +15,19 @@ for p in (DATA, UPLOADS, RENDERS):
     p.mkdir(parents=True, exist_ok=True)
 
 def _load_env():
-    f = BASE / ".env"
-    if f.exists():
-        for line in f.read_text(encoding="utf-8").splitlines():
-            line = line.strip()
-            if line and not line.startswith("#") and "=" in line:
-                k, v = line.split("=", 1)
-                os.environ.setdefault(k.strip(), v.strip())
+    # backend/.env hat Vorrang, die .env im Projektstamm ist der Rueckfall.
+    for f in (BASE / ".env", BASE.parent / ".env"):
+        if f.exists():
+            for line in f.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    k, v = line.split("=", 1)
+                    os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
 
 _load_env()
 
-MISTRAL_KEY = os.getenv("MISTRAL_API_KEY", "").strip()
+# MISTRAL_API_KEY ist der offizielle Name, MISTRAL_API wird als Alias akzeptiert.
+MISTRAL_KEY = (os.getenv("MISTRAL_API_KEY") or os.getenv("MISTRAL_API") or "").strip()
 MODEL_VISION = os.getenv("MISTRAL_MODEL_VISION", "mistral-medium-latest")
 MODEL_TEXT = os.getenv("MISTRAL_MODEL_TEXT", "ministral-8b-latest")
 API_URL = "https://api.mistral.ai/v1/chat/completions"

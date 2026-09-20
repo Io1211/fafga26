@@ -43,6 +43,14 @@ MISTRAL_MODEL_VISION=mistral-medium-latest
 MISTRAL_MODEL_TEXT=ministral-8b-latest
 ```
 
+Der Schlüssel darf auch als `MISTRAL_API` in der `.env` im Projektstamm stehen.
+Hat der Schlüssel für ein Modell kein Kontingent (Mistral antwortet dann mit
+429 und `x-ratelimit-limit-req-minute: 0`, etwa für `mistral-medium` im
+Gratis-Tarif), weicht das Backend von selbst aus: Vision auf `pixtral-12b-latest`,
+Text auf `ministral-8b-latest` bzw. `open-mistral-nemo`. `/api/health` zeigt
+unter `modelle`, was gerade tatsächlich antwortet. Fehlermeldungen von Mistral
+landen mit Statuscode in den `warnungen` der Antwort.
+
 Ohne Schlüssel läuft alles weiter — dann schreiben die **Haus-Muster**:
 deterministische Textbausteine, die ihre Sätze ausschließlich aus den Belegen
 ziehen. Das ist kein Notnagel, sondern der Notfallplan für die Bühne. Die

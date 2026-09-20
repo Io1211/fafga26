@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import house as house_store
 from . import llm, render, signale
-from .config import DATA, STATIC, UPLOADS, HAS_KEY, LAND, MODEL_TEXT, MODEL_VISION
+from .config import DATA, STATIC, UPLOADS, HAS_KEY, LAND
 from .schemas import AssistentPost, Empfehlung, House, IdeaRequest, PostOut
 
 app = FastAPI(title="Postify API", version="0.1.0")
@@ -23,8 +23,7 @@ PRIORITAETEN = ("zimmer", "restaurant", "veranstaltung", "tagesgericht", "sichtb
 
 @app.get("/api/health")
 def health():
-    return {"ok": True, "mistral": HAS_KEY,
-            "modelle": {"vision": MODEL_VISION, "text": MODEL_TEXT}}
+    return {"ok": True, "mistral": HAS_KEY, "modelle": llm.aktive_modelle()}
 
 
 @app.get("/api/house", response_model=House)
