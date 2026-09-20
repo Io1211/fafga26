@@ -35,10 +35,10 @@ export default function App() {
     <div className="shell">
       <aside className="side">
         <div className="brand">
-          <div className="mark">H</div>
+          <img className="mark" src="/logo-mark.svg" alt="" />
           <div>
-            <b>Hauspost</b>
-            <span>Hospitality Social OS</span>
+            <b>Postify</b>
+            <span>Idee, Foto, Post</span>
           </div>
         </div>
 

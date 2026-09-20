@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Postify Brand</title>
+<link rel="icon" href="logo-mark.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="brand.css">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--pf-paper); color: var(--pf-ink); font: 16px/1.55 var(--pf-ui); }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 16px 80px; }
+  h2 { font-family: var(--pf-display); font-weight: 800; letter-spacing: -.02em; font-size: 26px; margin: 0 0 6px; }
+  h3 { font-family: var(--pf-display); font-weight: 600; font-size: 17px; margin: 0 0 6px; }
+  p { margin: 0 0 12px; }
+  .muted { color: var(--pf-ink-muted); }
+  .eyebrow { font: 500 11px/1 var(--pf-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--pf-ink-muted); margin-bottom: 10px; }
+  section { padding: 56px 0 0; }
+  .grid { display: grid; gap: 16px; }
+  .g2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .g3 { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .card { background: #fff; border: 1px solid #daded2; border-radius: 6px; padding: 20px; }
+  .tile { border-radius: 6px; padding: 32px 20px; display: flex; align-items: center; justify-content: center; gap: 14px; min-height: 140px; }
+  .tile img { width: 56px; height: 56px; }
+  .tile .pf-word { font-size: 44px; }
+
+  /* Hero */
+  .hero { background: var(--pf-loden); color: #f4f6f2; padding: 72px 0 64px; }
+  .hero .wrap { padding-bottom: 0; }
+  .hero-logo { display: flex; align-items: center; gap: 18px; margin-bottom: 28px; }
+  .hero-logo img { width: 72px; height: 72px; }
+  .hero-logo .pf-word { font-size: 64px; }
+  .hero p.tag { font-family: var(--pf-display); font-size: clamp(22px, 4vw, 32px); font-weight: 600; letter-spacing: -.01em; margin: 0 0 8px; }
+  .hero p.sub { color: #c9d6cc; max-width: 560px; }
+
+  /* Palette */
+  .swatch { border-radius: 6px; overflow: hidden; border: 1px solid #daded2; background: #fff; }
+  .swatch .chip { height: 84px; }
+  .swatch .meta { padding: 10px 12px; font-size: 13px; }
+  .swatch b { display: block; font-family: var(--pf-display); font-size: 15px; }
+  .swatch code, code { font: 400 12px var(--pf-mono); color: var(--pf-ink-muted); }
+
+  /* Clearspace */
+  .clear { position: relative; display: inline-flex; align-items: center; gap: 14px; padding: 28px; border: 1px dashed #b6bdb0; border-radius: 6px; background: #fff; }
+  .clear img { width: 48px; height: 48px; }
+  .clear .pf-word { font-size: 38px; }
+
+  /* Typo */
+  .spec-display { font-family: var(--pf-display); font-weight: 800; font-size: 44px; letter-spacing: -.03em; line-height: 1.05; }
+  .spec-ui { font: 500 18px var(--pf-ui); }
+
+  /* UI-Muster */
+  .btn { font: 600 14px var(--pf-ui); padding: 10px 16px; border-radius: 4px; border: 1px solid var(--pf-loden); background: var(--pf-loden); color: #f4f6f2; cursor: pointer; }
+  .btn:hover { background: var(--pf-loden-lift); }
+  .btn.ghost { background: transparent; color: var(--pf-loden); }
+  .seg { display: inline-flex; border: 1px solid #c2c8b8; border-radius: 4px; overflow: hidden; }
+  .seg span { padding: 8px 14px; font: 500 14px var(--pf-ui); background: #fff; }
+  .seg span.on { background: var(--pf-loden); color: #f4f6f2; }
+  .pill { font: 500 11px var(--pf-mono); padding: 3px 9px; border-radius: 10px; }
+  .pill.ok { background: #dcebe1; color: #1f4733; }
+  .pill.warn { background: #fdf8ef; color: var(--pf-brass); }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .post { border: 1px solid #daded2; border-radius: 6px; overflow: hidden; background: #fff; max-width: 320px; }
+  .post .img { height: 150px; background: linear-gradient(135deg, #3d5f4a, #2f4a3a); position: relative; }
+  .post .img span { position: absolute; left: 14px; bottom: 12px; color: #fff; font: 800 22px var(--pf-display); letter-spacing: -.02em; }
+  .post .img span em { font-style: normal; color: #ff8fab; }
+  .post .cap { padding: 12px 14px; font-size: 14px; }
+  .post .cap small { display: block; color: var(--pf-ink-muted); margin-top: 6px; font: 400 11px var(--pf-mono); }
+
+  ul.clean { padding-left: 18px; margin: 0; }
+  ul.clean li { margin-bottom: 6px; }
+  .do { border-left: 3px solid #3f6b4a; }
+  .dont { border-left: 3px solid #a8322c; }
+  .say { font-family: var(--pf-display); font-size: 19px; font-weight: 600; letter-spacing: -.01em; margin: 0 0 6px; }
+  @media (max-width: 520px) { .hero-logo .pf-word { font-size: 46px; } .hero-logo img { width: 54px; height: 54px; } }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="hero-logo">
+      <img src="logo-mark-invert.svg" alt="">
+      <span class="pf-word">Post<span class="pf-i">ı</span>fy</span>
+    </div>
+    <p class="tag">Idee, Foto, Post. Ein Klick.</p>
+    <p class="sub">Der Social-Media-Assistent für Hotellerie und Gastronomie: Ideen finden, Fotos gestalten, Posts für Gäste und Team planen. Ohne Agentur, ohne Erfundenes.</p>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section>
+  <div class="eyebrow">01 · Marke</div>
+  <h2>Was Postify verspricht</h2>
+  <div class="grid g3" style="margin-top:16px">
+    <div class="card"><h3>Einfach</h3><p class="muted">Foto rein, Post raus. Was eine Agentur in Tagen macht, geht in Minuten.</p></div>
+    <div class="card"><h3>Ehrlich</h3><p class="muted">Jeder Satz steht auf einem hinterlegten Beleg. Nichts wird dazuerfunden.</p></div>
+    <div class="card"><h3>Gastgeberisch</h3><p class="muted">Warm, direkt und ohne Fachjargon, wie ein guter Wirt und nicht wie eine Software.</p></div>
+  </div>
+  <p class="muted" style="margin-top:16px"><b>Kernidee:</b> Postify macht aus einer Idee oder einem Foto einen fertigen Post, für Gäste und für Mitarbeiter. Das <i>-ify</i> steht für „zu etwas machen".</p>
+</section>
+
+<section>
+  <div class="eyebrow">02 · Logo</div>
+  <h2>Bildmarke und Wortmarke</h2>
+  <p class="muted">Das „P" besteht aus zwei Bändern: ein karminroter Strich, der nach unten ins Dunkle verläuft, und ein blauer Bogen von Nachtblau zu Kobalt. Wo sie sich treffen, entsteht das dunkle Blau. Der karminrote i-Punkt in der Wortmarke ist der Benachrichtigungspunkt: „Gepostet." Auf dunklem Grund steht die Marke auf einer hellen Kachel.</p>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="tile" style="background:#fff;border:1px solid #daded2"><img src="logo-mark.svg" alt=""><span class="pf-word">Post<span class="pf-i">ı</span>fy</span></div>
+    <div class="tile" style="background:var(--pf-loden);color:#f4f6f2"><img src="logo-mark-invert.svg" alt="" style="width:64px;height:64px"><span class="pf-word">Post<span class="pf-i">ı</span>fy</span></div>
+  </div>
+  <div class="grid g3" style="margin-top:16px">
+    <div class="tile" style="background:#fff;border:1px solid #daded2"><img src="logo-mark.svg" alt="" style="width:72px;height:72px"></div>
+    <div class="tile" style="background:var(--pf-loden-wash);border:1px solid #daded2"><img src="logo-mark-invert.svg" alt="" style="width:72px;height:72px"></div>
+    <div class="tile" style="background:#fff;border:1px solid #daded2;gap:8px"><img src="logo-mark.svg" alt="" style="width:16px;height:16px"><img src="logo-mark.svg" alt="" style="width:32px;height:32px"><img src="logo-mark.svg" alt="" style="width:48px;height:48px"></div>
+  </div>
+  <h3 style="margin-top:28px">Schutzraum</h3>
+  <p class="muted">Rund um das Logo bleibt mindestens die Breite des „P" frei. Die Bildmarke nie kleiner als 16 px, nie verzerren, nie neu einfärben, den Verlauf nie umkehren.</p>
+  <div class="clear"><img src="logo-mark.svg" alt=""><span class="pf-word">Post<span class="pf-i">ı</span>fy</span></div>
+</section>
+
+<section>
+  <div class="eyebrow">03 · Farbe</div>
+  <h2>Karmin und Kobalt auf ruhigem Grund</h2>
+  <p class="muted">Karmin und Kobalt gehören zur Marke und zum Logo-Verlauf. Loden, Papier und Tinte bleiben aus dem bisherigen App-Look als ruhiger Grund.</p>
+  <div class="grid g3" style="margin-top:16px">
+    <div class="swatch"><div class="chip" style="background:#2f4a3a"></div><div class="meta"><b>Loden</b><code>#2F4A3A</code><br><span class="muted">Hauptfarbe: Logo, Buttons, Flächen</span></div></div>
+    <div class="swatch"><div class="chip" style="background:linear-gradient(180deg,#cf2d57,#5e1830)"></div><div class="meta"><b>Karmin</b><code>#CF2D57 → #5E1830</code><br><span class="muted">Strich des P, i-Punkt</span></div></div>
+    <div class="swatch"><div class="chip" style="background:linear-gradient(90deg,#1c2b66,#2a63f0 42%,#2f78ff)"></div><div class="meta"><b>Kobalt</b><code>#1C2B66 → #2F78FF</code><br><span class="muted">Bogen des P, Akzente</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#f2f3ef"></div><div class="meta"><b>Papier</b><code>#F2F3EF</code><br><span class="muted">Seitengrund</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#191c19"></div><div class="meta"><b>Tinte</b><code>#191C19</code><br><span class="muted">Text</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#eef2ed"></div><div class="meta"><b>Loden hell</b><code>#EEF2ED</code><br><span class="muted">Hinterlegungen</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#9c7636"></div><div class="meta"><b>Messing</b><code>#9C7636</code><br><span class="muted">Hinweise, „in Prüfung"</span></div></div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">04 · Schrift</div>
+  <h2>Schrift mit Charakter, Oberfläche mit Ruhe</h2>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><div class="eyebrow">Fraunces · Überschriften und Wortmarke</div><div class="spec-display">Aus einem Foto wird ein Post.</div></div>
+    <div class="card"><div class="eyebrow">Inter · Oberfläche und Text</div><div class="spec-ui">Wählen Sie, für wen der Post gedacht ist: für Gäste oder für Ihr Team.</div><p class="muted" style="margin-top:10px"><code>JetBrains Mono</code> für Kleinstes: Status, Zahlen, Formate.</p></div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">05 · Ton</div>
+  <h2>So spricht Postify</h2>
+  <p class="muted">Wie ein guter Wirt: freundlich, klar, ohne Fachwörter. Ansprache mit „Sie", kurze Sätze, wenige Ausrufezeichen.</p>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card do"><h3>Ja</h3>
+      <p class="say">„Foto rein, Post raus."</p>
+      <p class="say">„Das steht auf Ihrem Beleg."</p>
+      <p class="say">„Für Gäste. Für Ihr Team."</p>
+    </div>
+    <div class="card dont"><h3>Nein</h3>
+      <p class="say" style="color:#a8322c">„Optimieren Sie Ihre Reichweite mit KI-Power!"</p>
+      <p class="say" style="color:#a8322c">„Revolutionäre Content-Automatisierung."</p>
+    </div>
+  </div>
+  <h3 style="margin-top:24px">Taglines</h3>
+  <ul class="clean">
+    <li><b>Idee, Foto, Post. Ein Klick.</b> Haupt-Tagline.</li>
+    <li>Foto rein, Post raus.</li>
+    <li>Postify macht daraus einen Post. Für Gäste und für Ihr Team.</li>
+    <li>Sichtbar werden, ohne Agentur.</li>
+  </ul>
+  <h3 style="margin-top:24px">Modi</h3>
+  <p class="muted">Die zwei Zielgruppen sind der Kern des Produkts und bekommen feste Namen: <b>Für Gäste</b> und <b>Für Team</b>.</p>
+</section>
+
+<section>
+  <div class="eyebrow">06 · Anwendung</div>
+  <h2>Bausteine in der Oberfläche</h2>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card">
+      <div class="row"><button class="btn">Post erstellen</button><button class="btn ghost">Idee vorschlagen</button></div>
+      <div class="row" style="margin-top:14px"><div class="seg"><span class="on">Für Gäste</span><span>Für Team</span></div></div>
+      <div class="row" style="margin-top:14px"><span class="pill ok">belegt</span><span class="pill warn">in Prüfung</span></div>
+    </div>
+    <div class="post">
+      <div class="img"><span>Frisch vom <em>Nachbarhof</em></span></div>
+      <div class="cap">Das Fleisch kommt vom Hof gleich nebenan, 400 Meter Luftlinie.<small>Beleg: „Nachbarhof, 400 m" · Story 9:16</small></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">07 · Einbau</div>
+  <h2>So wird die Marke verwendet</h2>
+  <ul class="clean">
+    <li><code>brand/brand.css</code> einbinden und die Wortmarke als <code>Post&lt;span class="pf-i"&gt;ı&lt;/span&gt;fy</code> mit der Klasse <code>pf-word</code> setzen.</li>
+    <li><code>brand/logo-mark.svg</code> als Bildmarke und Favicon, auf dunklem Grund <code>logo-mark-invert.svg</code>. Für das React-Frontend liegt eine Kopie in <code>frontend/public/</code>.</li>
+    <li>Interne Schlüssel wie <code>hauspost.v2</code> im Browser-Speicher bleiben bewusst unverändert, damit gespeicherte Betriebsdaten nicht verloren gehen.</li>
+  </ul>
+</section>
+
+</main>
+</body>
+</html>

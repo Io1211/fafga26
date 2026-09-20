@@ -1,0 +1,47 @@
+/* Postify — Markenbausteine. Erster Entwurf, Werte werden später angepasst.
+   Farben und Schriften folgen bewusst dem bestehenden App-Look (app/index.html). */
+
+:root {
+  /* Farben */
+  --pf-loden: #2f4a3a;       /* Hauptfarbe: Buttons, Logo, Flächen */
+  --pf-loden-lift: #3d5f4a;  /* Hover */
+  --pf-loden-wash: #eef2ed;  /* sanfte Hinterlegung */
+  --pf-crimson: #cf2d57;     /* Karmin: Strich des P, i-Punkt */
+  --pf-crimson-deep: #5e1830;
+  --pf-cobalt: #2a63f0;      /* Kobalt: Bogen des P */
+  --pf-navy: #1c2b66;        /* Nachtblau: Überlappung im P */
+  --pf-signal: var(--pf-crimson); /* Alias, bisher #d72229 */
+  --pf-brass: #9c7636;       /* Hinweise, Status "in Prüfung" */
+
+  /* Verlauf der Marke */
+  --pf-grad-stem: linear-gradient(180deg, #cf2d57, #b52a50 50%, #5e1830);
+  --pf-grad-bowl: linear-gradient(90deg, #1c2b66, #2a63f0 42%, #2f78ff);
+  --pf-paper: #f2f3ef;       /* Seitengrund */
+  --pf-ink: #191c19;         /* Text */
+  --pf-ink-muted: #5d655c;
+
+  /* Schriften */
+  --pf-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --pf-ui: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --pf-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+
+/* Wortmarke: <span class="pf-word">Post<span class="pf-i">ı</span>fy</span>
+   Das "i" ist ein punktloses ı, der karminrote Punkt ist der Benachrichtigungspunkt. */
+.pf-word {
+  font-family: var(--pf-display);
+  font-weight: 800;
+  letter-spacing: -.03em;
+  line-height: 1;
+  color: inherit;
+}
+.pf-word .pf-i { position: relative; display: inline-block; }
+.pf-word .pf-i::after {
+  content: "";
+  position: absolute;
+  left: 50%; top: .02em;
+  width: .2em; height: .2em;
+  margin-left: -.1em;
+  border-radius: 50%;
+  background: var(--pf-signal);
+}

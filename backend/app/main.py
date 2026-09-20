@@ -10,7 +10,7 @@ from . import llm, render, signale
 from .config import DATA, STATIC, UPLOADS, HAS_KEY, LAND, MODEL_TEXT, MODEL_VISION
 from .schemas import AssistentPost, Empfehlung, House, IdeaRequest, PostOut
 
-app = FastAPI(title="Hauspost API", version="0.1.0")
+app = FastAPI(title="Postify API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware, allow_origins=["*"], allow_methods=["*"],
     allow_headers=["*"], allow_credentials=False,

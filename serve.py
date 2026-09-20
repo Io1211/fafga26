@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Entwicklungsserver für Hauspost.
+Entwicklungsserver für Postify.
 
     python3 serve.py          # http://localhost:8000
 
@@ -27,7 +27,7 @@ class OhneCache(SimpleHTTPRequestHandler):
 
 if __name__ == "__main__":
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
-    print(f"Hauspost läuft auf http://localhost:{port}")
+    print(f"Postify läuft auf http://localhost:{port}")
     print(f"  Produkt   http://localhost:{port}/")
     print(f"  Editor    http://localhost:{port}/foto-video-editor/foto-video-editor.html")
     print(f"  KI        http://localhost:{port}/dev/ki.html")

@@ -21,8 +21,7 @@ a{color:inherit}
 .side{background:var(--card);border-radius:var(--r);padding:18px 16px;display:flex;
   flex-direction:column;gap:18px;position:sticky;top:16px;height:calc(100vh - 32px)}
 .brand{display:flex;gap:12px;align-items:center}
-.brand .mark{width:44px;height:44px;border-radius:12px;background:var(--navy);color:#fff;
-  display:grid;place-items:center;font-family:var(--serif);font-size:22px}
+.brand .mark{width:34px;height:42px;flex-shrink:0}
 .brand b{display:block;font-family:var(--serif);font-size:17px;font-weight:600}
 .brand span{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 .prop{display:flex;align-items:center;gap:10px;border:1px solid var(--line);
