@@ -7,15 +7,16 @@ das System weiter - nur ohne das Foto anzusehen.
 from __future__ import annotations
 
 import base64, hashlib, json, random, re
+from datetime import date
 from io import BytesIO
 from pathlib import Path
 
 import httpx
 from PIL import Image
 
-from . import signale
+from . import belegung, signale
 from .config import API_URL, DATA, HAS_KEY, LAND, MISTRAL_KEY, MODEL_TEXT, MODEL_VISION
-from .schemas import Copy, House, Idea
+from .schemas import Copy, Empfehlung, House, Idea
 
 CACHE = DATA / "cache"
 CACHE.mkdir(exist_ok=True)
@@ -279,3 +280,135 @@ def ideen(house: House, anzahl: int = 6, ziel: str | None = None) -> tuple[list[
             warum="Baut auf einem hinterlegten Beleg auf, nichts dazuerfunden.",
         ))
     return out, "haus-muster"
+
+
+# ---------------------------------------------------------------- Ideen-Assistent
+
+_WOCHENTAGE = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag", "Sonntag"]
+_REGENARTIG = {
+    "leichter Nieselregen", "Nieselregen", "starker Nieselregen",
+    "leichter Regen", "Regen", "starker Regen",
+    "Regenschauer", "kraeftige Regenschauer", "heftige Regenschauer",
+    "Gewitter", "Gewitter mit Hagel", "schweres Gewitter mit Hagel",
+}
+
+_REEL_VORLAGEN = {
+    "zimmer": ["Zimmer bei natuerlichem Licht zeigen, 3 Sek", "Blick aus Fenster oder Balkon, 2 Sek",
+               "Detail Bett oder Bad, 3 Sek", "Schlussbild mit Schriftzug, 2 Sek"],
+    "restaurant": ["Gedeckter Tisch oder Gaeste, 3 Sek", "Teller in Nahaufnahme, 3 Sek",
+                   "Kueche oder Service in Aktion, 2 Sek", "Schlussbild mit Schriftzug, 2 Sek"],
+    "veranstaltung": ["Ort oder Anlass zeigen, 3 Sek", "Vorbereitung oder Deko im Detail, 3 Sek",
+                       "Person laedt ein, 2 Sek", "Schlussbild mit Schriftzug, 2 Sek"],
+    "tagesgericht": ["Teller von oben, 3 Sek", "Zubereitung in der Kueche, 3 Sek",
+                      "Erste Gabel, 2 Sek", "Schlussbild mit Schriftzug, 2 Sek"],
+    "sichtbarkeit": ["Totale vom Haus, 3 Sek", "Ein Moment aus dem Alltag, 3 Sek",
+                      "Person schaut in die Kamera, 2 Sek", "Schlussbild mit Schriftzug, 2 Sek"],
+}
+
+
+def _wochentag(iso_datum: str) -> str:
+    return _WOCHENTAGE[date.fromisoformat(iso_datum).weekday()]
+
+
+def _kurzdatum(iso_datum: str) -> str:
+    d = date.fromisoformat(iso_datum)
+    if d == date.today():
+        return "heute"
+    return f"{d.day:02d}.{d.month:02d}."
+
+
+def _naechstes_wochenende(tage: list[dict]) -> dict | None:
+    for t in tage:
+        if date.fromisoformat(t["datum"]).weekday() in (5, 6):
+            return t
+    return tage[0] if tage else None
+
+
+def reel_drehplan(prioritaet: str) -> list[str]:
+    return list(_REEL_VORLAGEN.get(prioritaet, _REEL_VORLAGEN["sichtbarkeit"]))
+
+
+def empfehlung(house: House, prioritaet: str) -> Empfehlung:
+    """Datenbasierte Tagesempfehlung - deterministisch. Hier zaehlt die Zahl
+    aus dem Belegungs-Stub, keine kreative Formulierung ohne Grundlage."""
+    sig = signale.alle(house.ort, LAND)
+    wetter = sig["wetter"]
+
+    if prioritaet == "zimmer":
+        tag = _naechstes_wochenende(belegung.zimmer(4))
+        if tag:
+            w = next((t for t in wetter["tage"] if t["datum"] == tag["datum"]), None)
+            zusatz = ""
+            if w:
+                zusatz = (" und Regen ist angekuendigt" if w["beschreibung"] in _REGENARTIG
+                          else f", {w['beschreibung']}")
+            text = (f"Fuer {_wochentag(tag['datum'])} sind noch {tag['frei']} von {tag['gesamt']} "
+                    f"Zimmern frei{zusatz}. Wir empfehlen einen einladenden Zimmer-Post fuers Wochenende.")
+            quellen = [f"Zimmer frei: {tag['frei']}/{tag['gesamt']} am {tag['datum']}"] + \
+                      ([f"Wetter: {w['beschreibung']}"] if w else [])
+        else:
+            text = "Keine Belegungsdaten verfuegbar. Ein allgemeiner Zimmer-Post ist trotzdem moeglich."
+            quellen = []
+        return Empfehlung(prioritaet=prioritaet, anlass="Zimmerauslastung", text=text, quellen=quellen)
+
+    if prioritaet == "restaurant":
+        heute = belegung.restaurant(1)[0]
+        tg = belegung.tagesgericht()
+        text = (f"Im Restaurant sind heute noch {heute['frei']} von {heute['gesamt']} Plaetzen frei. "
+                f"Zeigt das Tagesgericht „{tg['gericht']}“ und ladet zum Reinschauen ein.")
+        quellen = [f"Plaetze frei: {heute['frei']}/{heute['gesamt']}", f"Tagesgericht: {tg['gericht']}"]
+        return Empfehlung(prioritaet=prioritaet, anlass="Restaurantauslastung", text=text, quellen=quellen)
+
+    if prioritaet == "veranstaltung":
+        termine = belegung.eigene_termine()
+        events = sig["events"]
+        if termine:
+            t = termine[0]
+            wann = "Heute steht" if t["datum"] == date.today().isoformat() else f"Am {_kurzdatum(t['datum'])} steht"
+            text = f"{wann} bei euch {t['titel']} an. Nutzt das fuer einen Ankuendigungspost."
+            quellen = [f"Eigener Termin: {t['titel']} ({t['datum']})"]
+        elif events["kurz"]:
+            text = f"In der Naehe: {events['kurz']}. Zeigt Gaesten, die deswegen unterwegs sind, dass es euch gibt."
+            quellen = [f"Event in der Naehe: {events['kurz']}"]
+        else:
+            text = "Aktuell ist kein Termin hinterlegt. Ein Post ohne festen Anlass haelt euch trotzdem sichtbar."
+            quellen = []
+        return Empfehlung(prioritaet=prioritaet, anlass="Veranstaltung", text=text, quellen=quellen)
+
+    if prioritaet == "tagesgericht":
+        tg = belegung.tagesgericht()
+        text = f"Heute gibt es {tg['gericht']}. Ein Foto direkt vom Teller wirkt am besten kurz vor der Mittagszeit."
+        quellen = [f"Tagesgericht: {tg['gericht']} ({_kurzdatum(tg['datum'])})"]
+        return Empfehlung(prioritaet=prioritaet, anlass="Tagesgericht", text=text, quellen=quellen)
+
+    # sichtbarkeit
+    zusatz = f" Draussen ist es {wetter['kurz']}." if wetter["kurz"] else ""
+    text = ("Kein akuter Anlass, dann zaehlt Kontinuitaet. Ein Bild aus eurem Alltag haelt euch "
+            "sichtbar, ganz ohne Verkaufsdruck." + zusatz)
+    quellen = [f"Wetter: {wetter['kurz']}"] if wetter["kurz"] else []
+    return Empfehlung(prioritaet=prioritaet, anlass="Sichtbarkeit", text=text, quellen=quellen)
+
+
+_UEBERSETZUNG_SCHEMA = {
+    "type": "object",
+    "properties": {"caption_en": {"type": "string"}},
+    "required": ["caption_en"],
+    "additionalProperties": False,
+}
+
+
+def uebersetzen(copy: Copy, house: House) -> tuple[str, str]:
+    """Englische Fassung der Caption. Ohne Schluessel keine Erfindung - die
+    deutsche Caption bleibt stehen, das UI markiert das transparent."""
+    if HAS_KEY:
+        try:
+            data = _call(MODEL_TEXT, [{"role": "user", "content":
+                "Uebersetze diese Social-Media-Caption fuer einen Hotel-/Gastro-Betrieb "
+                "ins natuerliche Englisch. Ton, Zeilenumbrueche und Fakten beibehalten, "
+                f"nichts hinzufuegen:\n\n{copy.caption}\n\n"
+                'Antworte als JSON: {"caption_en": "..."}'
+            }], _UEBERSETZUNG_SCHEMA)
+            return data["caption_en"], "mistral"
+        except Exception:
+            pass
+    return copy.caption, "unuebersetzt"

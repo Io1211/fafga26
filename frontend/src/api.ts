@@ -1,4 +1,5 @@
 export type Ziel = "gast" | "team";
+export type Prioritaet = "zimmer" | "restaurant" | "veranstaltung" | "tagesgericht" | "sichtbarkeit";
 
 export interface Copy {
   kicker: string; head: string[]; key: string; caption: string;
@@ -27,6 +28,14 @@ export interface Signale {
   wetter: { kurz: string; tage: { datum: string; beschreibung: string; max: number; min: number }[] };
   feiertage: { kurz: string; liste: { datum: string; name: string }[] };
   events: { kurz: string; liste: { name: string; datum: string; ort: string }[] };
+}
+export interface Empfehlung {
+  prioritaet: Prioritaet; anlass: string; text: string; quellen: string[];
+}
+export interface AssistentPost {
+  id: string; prioritaet: Prioritaet; empfehlung: Empfehlung; text: Copy; caption_en: string;
+  szenen: string[]; renders: Record<string, string>; source_url: string; engine: string;
+  warnungen: string[];
 }
 
 async function j<T>(r: Response): Promise<T> {
@@ -58,4 +67,11 @@ export const api = {
       body: JSON.stringify({ anzahl, ziel: ziel ?? null }),
     }).then(j<{ engine: string; ideen: Idea[] }>),
   signale: () => fetch("/api/signale").then(j<Signale>),
+  empfehlung: (prioritaet: Prioritaet) =>
+    fetch(`/api/empfehlung?prioritaet=${prioritaet}`).then(j<Empfehlung>),
+  assistent: (file: File, prioritaet: Prioritaet, notiz = "") => {
+    const fd = new FormData();
+    fd.append("file", file); fd.append("prioritaet", prioritaet); fd.append("notiz", notiz);
+    return fetch("/api/assistent", { method: "POST", body: fd }).then(j<AssistentPost>);
+  },
 };

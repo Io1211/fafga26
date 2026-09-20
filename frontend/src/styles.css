@@ -116,6 +116,18 @@ a{color:inherit}
 .month .n small{font-family:var(--sans);font-size:10px;color:var(--muted);margin-left:2px}
 .month[data-on="true"] .n small{color:rgba(255,255,255,.6)}
 
+.daygrid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--line);
+  border-radius:var(--r-sm);overflow:hidden;margin-top:14px}
+.weekday{background:var(--surface-2);padding:8px;text-align:center;font-family:var(--mono);
+  font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg-faint)}
+.day{background:#fff;min-height:68px;padding:8px;display:flex;flex-direction:column;gap:4px}
+.day.empty{background:var(--surface-2)}
+.day .num{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.day.event{background:var(--accent-soft)}
+.day.event .num{color:var(--navy);font-weight:700}
+.day .ev{font-size:10px;background:var(--navy);color:#fff;border-radius:6px;padding:2px 5px;
+  line-height:1.3}
+
 .bar{height:4px;border-radius:99px;background:var(--surface-2);overflow:hidden}
 .bar i{display:block;height:100%;background:var(--ok)}
 
@@ -143,7 +155,25 @@ textarea{resize:vertical;min-height:90px}
 .ideagrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
 @media(max-width:1200px){.ideagrid{grid-template-columns:repeat(2,1fr)}
   .grid2{grid-template-columns:1fr}.months{grid-template-columns:repeat(3,1fr)}
-  .studio{grid-template-columns:1fr}}
+  .studio{grid-template-columns:1fr}.priorities{grid-template-columns:repeat(3,1fr)}}
+
+/* ---------- Ideen-Assistent ---------- */
+.assistent{display:flex}
+.assistent .panel{display:flex;flex-direction:column;gap:16px;width:100%;max-width:720px}
+
+.priorities{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.priority{border:1px solid var(--line);border-radius:var(--r-sm);background:#fff;padding:14px 12px;
+  text-align:center;transition:background .13s,border-color .13s}
+.priority:hover{border-color:var(--accent)}
+.priority[data-on="true"]{background:var(--navy);border-color:var(--navy);color:#fff}
+.priority b{display:block;font-size:13px;margin-bottom:4px}
+.priority span{display:block;font-size:11px;color:var(--muted)}
+.priority[data-on="true"] span{color:rgba(255,255,255,.7)}
+
+.empfehlung{border-left:3px solid var(--accent);background:var(--accent-soft)}
+.empfehlung-text{font-family:var(--serif);font-size:19px;line-height:1.45;margin:10px 0 0;color:var(--ink)}
+
+@media(max-width:760px){.priorities{grid-template-columns:repeat(2,1fr)}}
 
 /* ---------- Entwürfe & Inbox ---------- */
 .entwuerfe-list,.inbox-list{display:flex;flex-direction:column;gap:8px}

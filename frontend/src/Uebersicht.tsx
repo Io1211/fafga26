@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api, Idea, Kennzahlen, Signale } from "./api";
-import { Haus, Mail, Team, Up } from "./icons";
+import { Haus, Mail, Team } from "./icons";
+import Jahreskalender from "./Jahreskalender";
 
 const ENTWUERFE = [
   { titel: "Herbstmenü – Kürbissuppe", meta: "Foto · Instagram · Reel", status: "Entwurf" },
@@ -23,8 +24,6 @@ export default function Uebersicht({ onStudio, onIdeen }:
   const [sig, setSig] = useState<Signale | null>(null);
   const [ideen, setIdeen] = useState<Idea[]>([]);
   const [laedt, setLaedt] = useState(false);
-  const [monatTab, setMonatTab] = useState<"jahr" | "woche">("jahr");
-  const [aktiverMonat, setAktiverMonat] = useState<string | null>(null);
 
   useEffect(() => {
     api.kennzahlen().then(setK).catch(() => {});
@@ -135,54 +134,7 @@ export default function Uebersicht({ onStudio, onIdeen }:
         </div>
       </div>
 
-      <div className="card">
-        <div className="rowhead">
-          <div>
-            <div className="eyebrow">Kampagnen, Anlässe und Content</div>
-            <h2>Social-Media-Jahreskalender</h2>
-          </div>
-          <div className="spacer" />
-          <div className="tabs">
-            <button data-on={monatTab === "jahr"} onClick={() => setMonatTab("jahr")}>Jahr</button>
-            <button data-on={monatTab === "woche"} onClick={() => setMonatTab("woche")}>Diese Woche</button>
-          </div>
-          <button className="btn primary" onClick={onStudio}><Up />Beitrag planen</button>
-        </div>
-        {monatTab === "jahr" ? (
-          <>
-            <div className="months">
-              {(k?.monate ?? []).map((m) => (
-                <div className="month" key={m.monat}
-                  data-on={aktiverMonat ? aktiverMonat === m.monat : !!m.aktiv}
-                  onClick={() => setAktiverMonat(m.monat)}>
-                  <div className="m">{m.monat}</div>
-                  <div className="t">{m.thema}</div>
-                  <div className="f">
-                    {m.kanaele.map((c) => <span className="kk" key={c}>{c}</span>)}
-                    <span className="n">{m.posts}<small>Posts</small></span>
-                  </div>
-                </div>
-              ))}
-            </div>
-            {(() => {
-              const name = aktiverMonat ?? (k?.monate ?? []).find((m) => m.aktiv)?.monat ?? null;
-              const monat = (k?.monate ?? []).find((m) => m.monat === name);
-              return monat?.termine?.length ? (
-                <div style={{ marginTop: 14 }}>
-                  <div className="eyebrow">Termine im {monat.monat}</div>
-                  <div className="chips" style={{ marginTop: 6 }}>
-                    {monat.termine.map((t) => (
-                      <span className="chip" key={t.titel}>{t.titel} · {t.datum}</span>
-                    ))}
-                  </div>
-                </div>
-              ) : null;
-            })()}
-          </>
-        ) : (
-          <div className="quellen">Wochenansicht folgt — noch nicht angebunden.</div>
-        )}
-      </div>
+      <Jahreskalender onStudio={onStudio} />
 
       <div className="grid2">
         <div className="card">

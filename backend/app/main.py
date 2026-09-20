@@ -8,7 +8,7 @@ from fastapi.staticfiles import StaticFiles
 from . import house as house_store
 from . import llm, render, signale
 from .config import DATA, STATIC, UPLOADS, HAS_KEY, LAND, MODEL_TEXT, MODEL_VISION
-from .schemas import House, IdeaRequest, PostOut
+from .schemas import AssistentPost, Empfehlung, House, IdeaRequest, PostOut
 
 app = FastAPI(title="Hauspost API", version="0.1.0")
 app.add_middleware(
@@ -18,6 +18,7 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
 ERLAUBT = {"image/jpeg", "image/png", "image/webp"}
+PRIORITAETEN = ("zimmer", "restaurant", "veranstaltung", "tagesgericht", "sichtbarkeit")
 
 
 @app.get("/api/health")
@@ -100,6 +101,52 @@ def ideen(req: IdeaRequest):
     return {"engine": engine, "ideen": [i.model_dump() for i in items]}
 
 
+@app.get("/api/empfehlung", response_model=Empfehlung)
+def empfehlung_get(prioritaet: str = "sichtbarkeit"):
+    """Datenbasierte Tagesempfehlung fuer den Ideen-Assistenten - vor dem Foto,
+    damit der Anlass feststeht, bevor irgendein Text geschrieben wird."""
+    if prioritaet not in PRIORITAETEN:
+        raise HTTPException(400, "Ungueltige Prioritaet.")
+    h = house_store.load()
+    return llm.empfehlung(h, prioritaet)
+
+
+@app.post("/api/assistent", response_model=AssistentPost)
+async def assistent_post(
+    file: UploadFile = File(...),
+    prioritaet: str = Form(...),
+    notiz: str = Form(""),
+):
+    """Ideen-Assistent: Foto plus Prioritaet ergeben Empfehlung, Post-Caption,
+    Story-Format, Reel-Drehplan und eine englische Caption - alles auf einmal."""
+    if file.content_type not in ERLAUBT:
+        raise HTTPException(415, "Nur JPEG, PNG oder WebP.")
+    if prioritaet not in PRIORITAETEN:
+        raise HTTPException(400, "Ungueltige Prioritaet.")
+
+    h = house_store.load()
+    empf = llm.empfehlung(h, prioritaet)
+
+    pid = uuid.uuid4().hex[:10]
+    pfad = UPLOADS / f"{pid}{Path(file.filename or '').suffix or '.jpg'}"
+    with pfad.open("wb") as f:
+        shutil.copyfileobj(file.file, f)
+
+    kontext = f"Fokus laut Tagesempfehlung: {empf.text}" + (f"\n{notiz}" if notiz else "")
+    copy, engine, warn = llm.copy_fuer_foto(pfad, h, "gast", kontext)
+    caption_en, _ = llm.uebersetzen(copy, h)
+    szenen = llm.reel_drehplan(prioritaet)
+    renders = {fmt: render.render(pfad, copy, h, fmt, pid) for fmt in render.FORMATS}
+
+    out = AssistentPost(
+        id=pid, prioritaet=prioritaet, empfehlung=empf, text=copy, caption_en=caption_en,
+        szenen=szenen, renders=renders, source_url=f"/static/uploads/{pfad.name}",
+        engine=engine, warnungen=warn,
+    )
+    (DATA / f"assistent-{pid}.json").write_text(out.model_dump_json(), encoding="utf-8")
+    return out
+
+
 @app.get("/api/signale")
 def signale_get():
     """Wetter, Feiertage, Events in der Naehe - Kontext fuer die Ideen."""
@@ -128,7 +175,11 @@ def kennzahlen():
             {"monat": "Januar", "thema": "Winter & Wellness", "posts": 14, "kanaele": ["IG", "FB"]},
             {"monat": "Februar", "thema": "Valentinstag", "posts": 10, "kanaele": ["IG", "TT"]},
             {"monat": "Maerz", "thema": "Fruehlingskueche", "posts": 8, "kanaele": ["IG", "LI"]},
-            {"monat": "April", "thema": "Ostern", "posts": 12, "kanaele": ["IG", "FB"]},
+            {"monat": "April", "thema": "Ostern", "posts": 12, "kanaele": ["IG", "FB"],
+             "termine": [
+                 {"titel": "Ostersonntag", "datum": "05.04."},
+                 {"titel": "Osterbrunch", "datum": "05.04."},
+             ]},
             {"monat": "Mai", "thema": "Terrassensaison", "posts": 9, "kanaele": ["IG", "TT"]},
             {"monat": "Juni", "thema": "Sommerstart", "posts": 7, "kanaele": ["IG", "FB"]},
             {"monat": "Juli", "thema": "Genussmomente", "posts": 6, "kanaele": ["IG", "TT"]},
@@ -136,11 +187,25 @@ def kennzahlen():
             {"monat": "September", "thema": "Erntezeit", "posts": 4, "kanaele": ["IG", "FB"], "aktiv": True,
              "termine": [
                  {"titel": "Törggelen", "datum": "12.09."},
-                 {"titel": "Messe Fafga", "datum": "19.–20.09."},
+                 {"titel": "Fafga Messe – Eröffnung", "datum": "19.09."},
+                 {"titel": "Fafga Messe – Livekochen am Stand", "datum": "19.09."},
+                 {"titel": "Fafga Messe – Familientag", "datum": "20.09."},
                  {"titel": "Hochzeit", "datum": "26.09."},
              ]},
-            {"monat": "Oktober", "thema": "Herbst-Retreat", "posts": 3, "kanaele": ["IG", "TT"]},
-            {"monat": "November", "thema": "Advent Teaser", "posts": 2, "kanaele": ["IG", "FB"]},
-            {"monat": "Dezember", "thema": "Festtage", "posts": 4, "kanaele": ["IG", "LI"]},
+            {"monat": "Oktober", "thema": "Herbst-Retreat", "posts": 3, "kanaele": ["IG", "TT"],
+             "termine": [
+                 {"titel": "Kürbisfest", "datum": "04.10."},
+                 {"titel": "Erntedank-Brunch", "datum": "18.10."},
+             ]},
+            {"monat": "November", "thema": "Advent Teaser", "posts": 2, "kanaele": ["IG", "FB"],
+             "termine": [
+                 {"titel": "Martinigansl-Essen", "datum": "11.11."},
+             ]},
+            {"monat": "Dezember", "thema": "Festtage", "posts": 4, "kanaele": ["IG", "LI"],
+             "termine": [
+                 {"titel": "Christkindlmarkt-Eröffnung", "datum": "01.12."},
+                 {"titel": "Heiligabend", "datum": "24.12."},
+                 {"titel": "Silvesterfeier", "datum": "31.12."},
+             ]},
         ],
     }

@@ -1,16 +1,20 @@
 import { useEffect, useState } from "react";
 import { api, House } from "./api";
-import { Cal, Chart, Doc, Gear, Grid, Haus, Mail, Search, Send, Spark } from "./icons";
+import { Cal, Cam, Chart, Doc, Gear, Grid, Haus, Mail, Search, Send, Spark } from "./icons";
 import Uebersicht from "./Uebersicht";
-import Studio from "./Studio";
+import FotoVideoEditor from "./FotoVideoEditor";
 import Ideen from "./Ideen";
+import Jahreskalender from "./Jahreskalender";
+import Assistent from "./Assistent";
 
-type View = "uebersicht" | "studio" | "ideen";
+type View = "uebersicht" | "studio" | "ideen" | "jahreskalender" | "assistent";
 
 const NAV: { id: View; label: string; icon: JSX.Element; badge?: string }[] = [
   { id: "uebersicht", label: "Übersicht", icon: <Grid /> },
+  { id: "assistent", label: "Ideen-Assistent", icon: <Cam /> },
   { id: "studio", label: "Studio", icon: <Doc /> },
   { id: "ideen", label: "Ideen", icon: <Spark /> },
+  { id: "jahreskalender", label: "Jahreskalender", icon: <Cal /> },
 ];
 
 export default function App() {
@@ -54,7 +58,6 @@ export default function App() {
               {n.badge && <span className="badge">{n.badge}</span>}
             </button>
           ))}
-          <button disabled style={{ opacity: .45 }}><Cal />Jahreskalender</button>
           <button disabled style={{ opacity: .45 }}><Send />Kanäle</button>
           <button disabled style={{ opacity: .45 }}><Mail />Inbox</button>
           <button disabled style={{ opacity: .45 }}><Chart />Kennzahlen</button>
@@ -74,7 +77,9 @@ export default function App() {
       <main className="main">
         <div className="card top">
           <div>
-            <h1>{view === "studio" ? "Studio" : view === "ideen" ? "Ideen" : "Operations-Cockpit"}</h1>
+            <h1>{view === "studio" ? "Studio" : view === "ideen" ? "Ideen"
+              : view === "jahreskalender" ? "Jahreskalender"
+              : view === "assistent" ? "Ideen-Assistent" : "Operations-Cockpit"}</h1>
             <div className="sub">{heute} · {house?.name ?? ""}</div>
           </div>
           <div className="spacer" />
@@ -86,8 +91,10 @@ export default function App() {
         </div>
 
         {view === "uebersicht" && <Uebersicht onStudio={() => setView("studio")} onIdeen={() => setView("ideen")} />}
-        {view === "studio" && <Studio />}
+        {view === "assistent" && <Assistent />}
+        {view === "studio" && <FotoVideoEditor house={house} />}
         {view === "ideen" && <Ideen />}
+        {view === "jahreskalender" && <Jahreskalender onStudio={() => setView("studio")} />}
       </main>
     </div>
   );

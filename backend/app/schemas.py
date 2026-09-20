@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 
 Ziel = Literal["gast", "team"]
 Format = Literal["story", "post", "square"]
+Prioritaet = Literal["zimmer", "restaurant", "veranstaltung", "tagesgericht", "sichtbarkeit"]
 
 
 class House(BaseModel):
@@ -52,3 +53,25 @@ class Idea(BaseModel):
 class IdeaRequest(BaseModel):
     anzahl: int = 6
     ziel: Optional[Ziel] = None
+
+
+class Empfehlung(BaseModel):
+    """Datenbasierte Tagesempfehlung: worauf sich der Post heute stuetzt."""
+    prioritaet: Prioritaet
+    anlass: str
+    text: str
+    quellen: List[str] = Field(default_factory=list)
+
+
+class AssistentPost(BaseModel):
+    """Ergebnis des Ideen-Assistenten: Empfehlung plus alle vier Ausgabeformen."""
+    id: str
+    prioritaet: Prioritaet
+    empfehlung: Empfehlung
+    text: Copy
+    caption_en: str
+    szenen: List[str] = Field(default_factory=list)
+    renders: dict
+    source_url: str
+    engine: str
+    warnungen: List[str] = Field(default_factory=list)
